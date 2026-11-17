@@ -252,20 +252,26 @@ function down(id){
   }
  }
  if((P.ty==='seq'||P.ty==='run')&&P.play&&!P.done){
-  const expected=LV[P.i].s[P.step];
-  if(id===expected){
-   const grade=rhythmGrade();P.lastHit=id;P.step++;P.hitGrade=null;
-   if(grade==='FORA DO TEMPO')P.combo=0;else{P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;}
-   P.score=(P.score||0)+(grade==='PERFEITO'?160:grade==='BOM'?100:35);
+  const sequence=LV[P.i].s||[],expected=sequence[P.step],correct=id===expected;
+  if(sequence.length&&expected){
+   const grade=rhythmGrade();P.lastHit=id;P.step++;
+   if(correct){
+    if(grade==='FORA DO TEMPO')P.combo=0;else{P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;}
+    P.score=(P.score||0)+(grade==='PERFEITO'?160:grade==='BOM'?100:35);
+    msg(grade==='PERFEITO'?'PERFEITO! No tempo certo.':grade==='BOM'?'Muito bem! Boa batida.':'Nota certa! Continue a sequência.');
+   }else{
+    P.combo=0;P.miss=(P.miss||0)+1;P.score=(P.score||0)+15;
+    const next=sequence[P.step]||'',label=next?(next[0]==='k'?KL[+next.slice(1)]:BL[+next.slice(1)]):'final';
+    msg('Nota fora da sequência, mas seguimos! Próxima nota: '+label+'.');
+   }
    if(P.ty==='run'&&!P.t)P.t=.001;
    checkpoint();refreshHud();
-   msg(grade==='PERFEITO'?'PERFEITO! No tempo certo.':grade==='BOM'?'Muito bem! Boa batida.':'Nota certa! Continue a sequência.');
-   if(P.step>=LV[P.i].s.length)win();
-  }else if(id!==P.lastWrong){P.combo=0;P.miss=(P.miss||0)+1;P.lastWrong=id;msg('Nota errada. A tecla iluminada mostra a próxima nota.');refreshHud();}
+   if(P.step>=sequence.length)win();
+  }
  }
 }
 function up(id){if(held[id]){held[id]();delete held[id]}if(P.last===id)P.last=null;if(P.lastWrong===id)P.lastWrong=null;const e=$('#'+id);e&&e.classList.remove('on')}
-function mk(id,c,l){const b=document.createElement('button');b.id=id;b.className=c;b.textContent=l;b.onpointerdown=e=>{e.preventDefault();down(id)};['pointerup','pointerleave','pointercancel'].forEach(v=>b['on'+v]=()=>up(id));$(id[0]=='b'?'#bs':'#ks').appendChild(b)}
+function mk(id,c,l){const b=document.createElement('button');b.id=id;b.className=c;b.textContent=l;b.onpointerdown=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(_){}down(id)};['pointerup','pointerleave','pointercancel','lostpointercapture'].forEach(v=>b['on'+v]=()=>up(id));$(id[0]=='b'?'#bs':'#ks').appendChild(b)}
 BN.forEach((n,i)=>mk('b'+i,'b',n+' · '+BL[i].toUpperCase()));KF.forEach((f,i)=>mk('k'+i,'k',KL[i].toUpperCase()));
 addEventListener('keydown',e=>{if(e.repeat)return;const k=e.key.toLowerCase();keys[k]=1;if(k.length==1){if(KL.includes(k))down('k'+KL.indexOf(k));else if(BL.includes(k))down('b'+BL.indexOf(k))}});
 addEventListener('keyup',e=>{const k=e.key.toLowerCase();keys[k]=0;if(k.length==1){if(KL.includes(k))up('k'+KL.indexOf(k));if(BL.includes(k))up('b'+BL.indexOf(k))}});
