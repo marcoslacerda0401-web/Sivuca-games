@@ -407,7 +407,7 @@ function flash(){const f=$('#fl');f.style.animation='none';void f.offsetWidth;f.
 function chips(){$('#map').innerHTML='';LV.forEach((l,i)=>{const b=document.createElement('button');b.textContent=l.n;b.className=i==P.i?'cur':i<save.d?'done':i>save.d?'lock':'';b.onclick=()=>{if(i<=save.d)arrive(i)};$('#map').appendChild(b)})}
 function checkpoint(){
  if(!P.play||P.done)return;
- save.current={i:P.i,step:P.step||0,t:P.t||0,hold:P.hold||0,en:P.en||0,jamLastType:P.jamLastType??null,score:P.score||0,combo:P.combo||0,miss:P.miss||0,perfect:P.perfect||0,rhythmStart:P.rhythmStart||0,choice:P.choice,choiceBonus:P.choiceBonus||0,choiceText:P.choiceText||'',ty:P.ty};sv();
+ save.current={i:P.i,step:P.step||0,t:P.t||0,hold:P.hold||0,en:P.en||0,jamLastType:P.jamLastType??null,score:P.score||0,combo:P.combo||0,miss:P.miss||0,perfect:P.perfect||0,hits:P.hits||0,totalTiming:P.totalTiming||0,rhythmStart:P.rhythmStart||0,choice:P.choice,choiceBonus:P.choiceBonus||0,choiceText:P.choiceText||'',ty:P.ty};sv();
 }
 function startChallenge(){
  const l=LV[P.i];P.play=1;P.paused=0;$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';P.rhythmStart=gt+2.2;init();backing(1);msg(l.g+' · acompanhe as notas que descem e toque na linha de execução');checkpoint();
@@ -426,7 +426,7 @@ function storyScene(i,j){
 }
 function travelTo(i){const el=$('#travel'),from=LV[P.i].c,to=LV[i].c;el.innerHTML='<span class="travel-cloud" style="top:18%;left:8%">☁</span><span class="travel-cloud" style="top:35%;left:65%;animation-delay:-3s">☁</span><div class="travel-copy"><small>PRÓXIMA PARADA</small><h2>'+from+' → '+to+'</h2><p>Uma nova etapa da jornada musical de Sivuca</p><div class="travel-route"><span class="travel-plane">✈</span></div><small>PREPARE-SE PARA O PRÓXIMO RITMO</small></div>';el.classList.add('show');setTimeout(()=>{el.classList.remove('show');el.innerHTML='';arrive(i)},2350)}
 function arrive(i){
- P={i,step:0,t:0,hold:0,en:0,paused:0,last:null,jamLastType:null,bl:null,done:0,play:0,ty:LV[i].ty,score:0,choice:null,combo:0,miss:0,perfect:0};
+ P={i,step:0,t:0,hold:0,en:0,paused:0,last:null,jamLastType:null,bl:null,done:0,play:0,ty:LV[i].ty,score:0,choice:null,combo:0,miss:0,perfect:0,hits:0,totalTiming:0};
  const l=LV[i];backing(0);chips();flash();msg(l.g);refreshHud();storyScene(i,0);
 }
 function showAbout(){
@@ -452,7 +452,7 @@ setTimeout(()=>{if(i<LV.length-1)card(`<h2>Capítulo concluído!</h2><div class=
 else card(`<h2>O legado continua</h2><p>Você acompanhou sete capítulos da vida de Mestre Sivuca: da primeira sanfona em Itabaiana às experiências internacionais, às parcerias e ao diálogo entre a música popular e a orquestra.</p><p>🏅 ${save.ach.join(' · ')}</p><p>“Feira de Mangaio”, criada com Glória Gadelha, e tantas outras obras continuam aproximando pessoas da música brasileira.</p><p class=f>As cenas e falas deste jogo são dramatizações ficcionais. Os acontecimentos biográficos seguem fontes históricas. A sanfona e as bases são sintetizadas e originais.</p>`,'Abrir diário',()=>{P.play=0;msg('Jornada concluída · Diário disponível');stageEl.textContent='JORNADA CONCLUÍDA';showJournal()})},700)}
 function logic(dt){if(!P.play||P.done||P.paused)return;const l=LV[P.i];
 if(l.ty==='seq'||l.ty==='run'){
- if(l.ty==='run'&&P.t){P.t+=dt;if(P.t>l.lim){P.step=0;P.t=0;P.combo=0;P.bl=null;msg('O tempo acabou. A sequência foi reiniciada; siga a tecla iluminada.');refreshHud();}}
+ if(l.ty==='run'&&P.t){P.t+=dt;if(P.t>l.lim){P.step=0;P.t=0;P.combo=0;P.bl=null;P.rhythmStart=gt+2.2;msg('O tempo acabou. A sequência foi reiniciada; siga a tecla iluminada.');refreshHud();}}
  const seq=l.s||[],target=(P.rhythmStart||gt+2.2)+(P.step||0)*.72;
  if(seq[P.step]&&gt>target+.36){
   P.step++;P.combo=0;P.miss=(P.miss||0)+1;P.judgement='NOTA PERDIDA';P.judgementColor='#ff9c88';P.judgementAt=gt;
@@ -565,7 +565,7 @@ chips();$('#journal').onclick=showJournal;$('#about').onclick=showAbout;
  $('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'Ativar som':'Silenciar';if(master)master.gain.setTargetAtTime(muted?0:volume,ac.currentTime,.04);};
  msg('Arraste o fole para controlar o ar · toque nas teclas para tocar');requestAnimationFrame(loop);
 ui.style.display='flex';ui.innerHTML=`<div class=card style="border:0;background:none"><h1>FOLE</h1><h2>A jornada de Mestre Sivuca</h2><p>Você acompanha <b>Mestre Sivuca</b> desde a infância em Itabaiana até sua consagração como músico de alcance internacional. Cada capítulo revela um momento real de sua trajetória e propõe um desafio musical inspirado nele.</p><button class=go id=n>Começar</button>${(save.current||(save.d>0&&save.d<LV.length))?'<button class=go id=cn>Continuar jornada</button>':''}<p class=f>Como jogar: arraste o fole para controlar o ar e toque nas teclas e nos baixos. As notas iluminadas indicam a sequência. O progresso do desafio é salvo automaticamente.</p><p class=f>As cenas e diálogos são dramatizações; não são falas reais de Sivuca ou de pessoas próximas. As escolhas mudam apenas a experiência do jogador, não os fatos históricos.</p></div>`;
-$('#n').onclick=()=>{save.current=null;sv();ui.style.display='none';init();arrive(0)};if($('#cn'))$('#cn').onclick=()=>{ui.style.display='none';init();if(save.current){const q=save.current;P={i:q.i,step:q.step,t:q.t,hold:q.hold,en:q.en,paused:0,jamLastType:q.jamLastType??null,last:null,bl:null,done:0,play:1,ty:q.ty,score:q.score,rhythmStart:gt+2.2,choice:q.choice,choiceBonus:q.choiceBonus,choiceText:q.choiceText,combo:q.combo,miss:q.miss,perfect:q.perfect};chips();refreshHud();$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';backing(1);msg('Desafio retomado do último ponto salvo.');}else arrive(Math.min(save.d,LV.length-1));};
+$('#n').onclick=()=>{save.current=null;sv();ui.style.display='none';init();arrive(0)};if($('#cn'))$('#cn').onclick=()=>{ui.style.display='none';init();if(save.current){const q=save.current;P={i:q.i,step:q.step,t:q.t,hold:q.hold,en:q.en,paused:0,jamLastType:q.jamLastType??null,last:null,bl:null,done:0,play:1,ty:q.ty,score:q.score,rhythmStart:gt+2.2,choice:q.choice,choiceBonus:q.choiceBonus,choiceText:q.choiceText,combo:q.combo,miss:q.miss,perfect:q.perfect,hits:q.hits||0,totalTiming:q.totalTiming||0};chips();refreshHud();$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';backing(1);msg('Desafio retomado do último ponto salvo.');}else arrive(Math.min(save.d,LV.length-1));};
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('visibilitychange',()=>{if(document.hidden){Object.keys(held).forEach(up);backing(0);checkpoint()}else if(P.play&&!P.done){init();backing(1)}});
 </script></body></html>
