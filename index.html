@@ -344,7 +344,7 @@ function backing(on){
   step++;
  },beat);
 }
-function rhythmGrade(){const l=LV[P.i],beat=.72,target=(P.rhythmStart||gt+2.2)+(P.step||0)*beat,dist=Math.abs(gt-target);return dist<.13?'PERFEITO':dist<.28?'BOM':'FORA DO TEMPO'}
+function rhythmTiming(){const beat=.72,target=(P.rhythmStart||gt+2.2)+(P.step||0)*beat,offset=gt-target,abs=Math.abs(offset);return {target,offset,abs,grade:abs<=.11?'PERFEITO':abs<=.23?'BOM':abs<=.36?'OK':'FORA DO TEMPO'}}
 function down(id){
  init();if(held[id])return;
  const b=id[0]==='k',n=+id.slice(1);
@@ -368,22 +368,29 @@ function down(id){
   }
  }
  if((P.ty==='seq'||P.ty==='run')&&P.play&&!P.done){
-  const sequence=LV[P.i].s||[],expected=sequence[P.step],correct=id===expected;
+  const sequence=LV[P.i].s||[],expected=sequence[P.step];
   if(sequence.length&&expected){
-   const grade=rhythmGrade(),lane=id[0]==='k'?Math.floor(+id.slice(1)/2):2+(+id.slice(1)%2),expectedLane=expected[0]==='k'?Math.floor(+expected.slice(1)/2):2+(+expected.slice(1)%2),laneCorrect=lane===expectedLane;P.lastHit=id;P.step++;P.judgementAt=gt;
-   if(correct&&laneCorrect){
-    P.judgement=grade==='PERFEITO'?'PERFEITO':grade==='BOM'?'MUITO BOM':'NO TEMPO';P.judgementColor=grade==='PERFEITO'?'#ffe08a':'#a6e7d2';
-    if(grade==='FORA DO TEMPO')P.combo=0;else{P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;}
-    P.score=(P.score||0)+(grade==='PERFEITO'?160:grade==='BOM'?100:35);
-    msg(grade==='PERFEITO'?'PERFEITO! No tempo certo.':grade==='BOM'?'MUITO BOM! Boa batida.':'Nota certa! Continue a sequência.');
+   const timing=rhythmTiming();
+   if(timing.offset < -0.36){
+    msg('Muito cedo! Espere a nota chegar à linha de execução.');
    }else{
-    P.judgement='TENTE NOVAMENTE';P.judgementColor='#ff9c88';P.combo=0;P.miss=(P.miss||0)+1;P.score=(P.score||0)+15;
-    const next=sequence[P.step]||'',label=next?(next[0]==='k'?KL[+next.slice(1)]:BL[+next.slice(1)]):'final';
-    msg((!laneCorrect?'Pista errada. ':'Nota fora da sequência, mas seguimos! ')+'Próxima nota: '+label+'.');
+    const correct=id===expected;
+    P.lastHit=id;P.step++;P.judgementAt=gt;P.lastOffset=timing.offset;
+    if(correct&&timing.abs<=.36){
+     P.judgement=timing.grade;P.judgementColor=timing.grade==='PERFEITO'?'#ffe08a':timing.grade==='BOM'?'#a6e7d2':'#b8d5ff';
+     P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+(timing.grade==='PERFEITO'?1:0);
+     P.score=(P.score||0)+(timing.grade==='PERFEITO'?180:timing.grade==='BOM'?120:70);
+     P.hits=(P.hits||0)+1;P.totalTiming=(P.totalTiming||0)+timing.abs;
+     msg(timing.grade+' · '+(timing.offset<0?'adiantado':'atrasado')+' '+Math.round(timing.abs*1000)+' ms');
+    }else{
+     P.judgement=correct?'FORA DO TEMPO':'NOTA ERRADA';P.judgementColor='#ff9c88';
+     P.combo=0;P.miss=(P.miss||0)+1;P.score=(P.score||0)+10;
+     msg(correct?'Fora do tempo! A próxima nota já vem.':'Nota errada! Continue acompanhando a sequência.');
+    }
+    if(P.ty==='run'&&!P.t)P.t=.001;
+    checkpoint();refreshHud();
+    if(P.step>=sequence.length)win();
    }
-   if(P.ty==='run'&&!P.t)P.t=.001;
-   checkpoint();refreshHud();
-   if(P.step>=sequence.length)win();
   }
  }
 }
@@ -446,6 +453,12 @@ else card(`<h2>O legado continua</h2><p>Você acompanhou sete capítulos da vida
 function logic(dt){if(!P.play||P.done||P.paused)return;const l=LV[P.i];
 if(l.ty==='seq'||l.ty==='run'){
  if(l.ty==='run'&&P.t){P.t+=dt;if(P.t>l.lim){P.step=0;P.t=0;P.combo=0;P.bl=null;msg('O tempo acabou. A sequência foi reiniciada; siga a tecla iluminada.');refreshHud();}}
+ const seq=l.s||[],target=(P.rhythmStart||gt+2.2)+(P.step||0)*.72;
+ if(seq[P.step]&&gt>target+.36){
+  P.step++;P.combo=0;P.miss=(P.miss||0)+1;P.judgement='NOTA PERDIDA';P.judgementColor='#ff9c88';P.judgementAt=gt;
+  msg('Nota perdida! Acompanhe a próxima na linha de execução.');checkpoint();refreshHud();
+  if(P.step>=seq.length)win();
+ }
  if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();
 }
 else if(l.ty=='swell'){const ok=held[l.k]&&pr>l.lo&&pr<l.hi;P.hold=Math.max(0,P.hold+(ok?dt:-dt*.7));if(P.hold>=l.need){P.score=1000;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
@@ -486,7 +499,8 @@ function drawRhythmStage(l){
   x.fillStyle=colors[lane];x.beginPath();x.roundRect(xx,yy-11,30,22,7);x.fill();x.restore();
   x.fillStyle='#101522';x.font='900 12px system-ui';x.textAlign='center';x.fillText(seq[j][0]==='k'?KL[+seq[j].slice(1)].toUpperCase():BL[+seq[j].slice(1)].toUpperCase(),xx+15,yy+4);
  }
- // execution line and hit target
+ // zona de precisão e linha de execução
+ x.fillStyle='#ffffff12';x.fillRect(20,hit-5,360,10);
  x.fillStyle='#fff0c9';x.globalAlpha=.9;x.fillRect(20,hit,360,2);x.globalAlpha=1;
  x.fillStyle='#ffe2a0';x.font='800 8px system-ui';x.textAlign='left';x.fillText('TOQUE AQUI',22,hit+17);
  if(P.judgement&&gt-(P.judgementAt||0)<.85){
@@ -496,6 +510,7 @@ function drawRhythmStage(l){
  const beatPhase=((gt-start)%beat+beat)%beat;
  x.fillStyle='#ffffff20';x.fillRect(20,228,360,5);x.fillStyle='#f6ce7a';x.fillRect(20,228,360*(beatPhase/beat),5);
  x.textAlign='right';x.fillStyle='#f5dcae';x.font='700 8px system-ui';x.fillText('COMBO ×'+(P.combo||0),378,17);
+  x.textAlign='left';x.fillStyle='#c9d8ec';x.font='700 8px system-ui';x.fillText('ACERTOS '+(P.hits||0)+'  ·  ERROS '+(P.miss||0),14,242);
 }
 
 function drawAccordion(){
