@@ -293,7 +293,7 @@ function backing(on){
   step++;
  },beat);
 }
-function rhythmGrade(){const beat=60/104,phase=((gt%beat)+beat)%beat,dist=Math.min(phase,beat-phase);return dist<.105?'PERFEITO':dist<.21?'BOM':'FORA DO TEMPO'}
+function rhythmGrade(){const l=LV[P.i],beat=.72,target=(P.rhythmStart||gt+2.2)+(P.step||0)*beat,dist=Math.abs(gt-target);return dist<.13?'PERFEITO':dist<.28?'BOM':'FORA DO TEMPO'}
 function down(id){
  init();if(held[id])return;
  const b=id[0]==='k',n=+id.slice(1);
@@ -319,15 +319,15 @@ function down(id){
  if((P.ty==='seq'||P.ty==='run')&&P.play&&!P.done){
   const sequence=LV[P.i].s||[],expected=sequence[P.step],correct=id===expected;
   if(sequence.length&&expected){
-   const grade=rhythmGrade();P.lastHit=id;P.step++;
-   if(correct){
+   const grade=rhythmGrade(),lane=id[0]==='k'?Math.floor(+id.slice(1)/2):2+(+id.slice(1)%2),expectedLane=expected[0]==='k'?Math.floor(+expected.slice(1)/2):2+(+expected.slice(1)%2),laneCorrect=lane===expectedLane;P.lastHit=id;P.step++;
+   if(correct&&laneCorrect){
     if(grade==='FORA DO TEMPO')P.combo=0;else{P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;}
     P.score=(P.score||0)+(grade==='PERFEITO'?160:grade==='BOM'?100:35);
-    msg(grade==='PERFEITO'?'PERFEITO! No tempo certo.':grade==='BOM'?'Muito bem! Boa batida.':'Nota certa! Continue a sequência.');
+    msg(grade==='PERFEITO'?'PERFEITO! No tempo certo.':grade==='BOM'?'MUITO BOM! Boa batida.':'Nota certa! Continue a sequência.');
    }else{
     P.combo=0;P.miss=(P.miss||0)+1;P.score=(P.score||0)+15;
     const next=sequence[P.step]||'',label=next?(next[0]==='k'?KL[+next.slice(1)]:BL[+next.slice(1)]):'final';
-    msg('Nota fora da sequência, mas seguimos! Próxima nota: '+label+'.');
+    msg((!laneCorrect?'Pista errada. ':'Nota fora da sequência, mas seguimos! ')+'Próxima nota: '+label+'.');
    }
    if(P.ty==='run'&&!P.t)P.t=.001;
    checkpoint();refreshHud();
@@ -351,7 +351,7 @@ function checkpoint(){
  save.current={i:P.i,step:P.step||0,t:P.t||0,hold:P.hold||0,en:P.en||0,jamLastType:P.jamLastType??null,score:P.score||0,combo:P.combo||0,miss:P.miss||0,perfect:P.perfect||0,choice:P.choice,choiceBonus:P.choiceBonus||0,choiceText:P.choiceText||'',ty:P.ty};sv();
 }
 function startChallenge(){
- const l=LV[P.i];P.play=1;init();backing(1);msg(l.g+' · acompanhe o ritmo e controle o fole');checkpoint();
+ const l=LV[P.i];P.play=1;P.rhythmStart=gt+2.2;init();backing(1);msg(l.g+' · acompanhe as notas que descem e toque na linha de execução');checkpoint();
 }
 function storyScene(i,j){
  const l=LV[i],s=l.scenes[j];
@@ -399,6 +399,40 @@ if(l.ty==='seq'||l.ty==='run'){
 else if(l.ty=='swell'){const ok=held[l.k]&&pr>l.lo&&pr<l.hi;P.hold=Math.max(0,P.hold+(ok?dt:-dt*.7));if(P.hold>=l.need){P.score=1000;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 else if(l.ty==='jam'){if(P.en>=100){P.score=(P.score||0)+500;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
+
+function rhythmLane(id){return id[0]==='k'?Math.floor(+id.slice(1)/2):2+(+id.slice(1)%2)}
+function drawRhythmStage(l){
+ const names=['MELODIA 1','MELODIA 2','BAIXO 1','BAIXO 2'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4'],left=28,lw=86,top=48,bottom=211,hit=183,beat=.72,start=P.rhythmStart||gt+2.2,seq=l.s||[];
+ // skyline and stage glow
+ x.fillStyle='#080e1b';x.fillRect(0,0,W,H);
+ for(let i=0;i<16;i++){const xx=i*27;x.fillStyle=i%2?'#17263a':'#1d2940';x.fillRect(xx,95+(i*17%48),19,125)}
+ const glow=x.createRadialGradient(200,110,4,200,110,210);glow.addColorStop(0,l.col[0]+'66');glow.addColorStop(1,'#080e1b00');x.fillStyle=glow;x.fillRect(0,25,W,205);
+ x.font='700 10px system-ui';x.textAlign='left';x.fillStyle='#f8e6c8';x.fillText(l.c.toUpperCase()+'  /  DESAFIO DE RITMO',14,17);
+ x.textAlign='right';x.fillStyle='#f6cf7d';x.fillText('NOTA '+Math.min(P.step+1,seq.length)+' / '+seq.length,386,17);
+ for(let lane=0;lane<4;lane++){
+  const xx=left+lane*lw;x.fillStyle='#ffffff0b';x.fillRect(xx,top,lw-5,bottom-top);
+  x.fillStyle=colors[lane];x.globalAlpha=.9;x.fillRect(xx,top,2,bottom-top);x.globalAlpha=1;
+  x.font='700 7px system-ui';x.textAlign='center';x.fillStyle=colors[lane];x.fillText(names[lane],xx+(lw-5)/2,top-7);
+  x.strokeStyle='#ffffff18';x.lineWidth=1;x.beginPath();x.moveTo(xx,hit);x.lineTo(xx+lw-5,hit);x.stroke();
+ }
+ // approaching notes: current and next four events, travelling towards the hit line
+ for(let j=P.step;j<Math.min(seq.length,P.step+5);j++){
+  const lane=rhythmLane(seq[j]),xx=left+lane*lw+((lw-5)-30)/2,target=start+j*beat;
+  const yy=hit-(target-gt)*112;
+  if(yy<top-16||yy>bottom+8)continue;
+  const active=j===P.step;x.save();x.shadowColor=colors[lane];x.shadowBlur=active?18:9;
+  x.fillStyle=colors[lane];x.beginPath();x.roundRect(xx,yy-11,30,22,7);x.fill();x.restore();
+  x.fillStyle='#101522';x.font='900 12px system-ui';x.textAlign='center';x.fillText(seq[j][0]==='k'?KL[+seq[j].slice(1)].toUpperCase():BL[+seq[j].slice(1)].toUpperCase(),xx+15,yy+4);
+ }
+ // execution line and hit target
+ x.fillStyle='#fff0c9';x.globalAlpha=.9;x.fillRect(20,hit,360,2);x.globalAlpha=1;
+ x.fillStyle='#ffe2a0';x.font='800 8px system-ui';x.textAlign='left';x.fillText('TOQUE AQUI',22,hit+17);
+ // live timing pulse
+ const beatPhase=((gt-start)%beat+beat)%beat;
+ x.fillStyle='#ffffff20';x.fillRect(20,228,360,5);x.fillStyle='#f6ce7a';x.fillRect(20,228,360*(beatPhase/beat),5);
+ x.textAlign='right';x.fillStyle='#f5dcae';x.font='700 8px system-ui';x.fillText('COMBO ×'+(P.combo||0),378,17);
+}
+
 function drawAccordion(){
  const top=104,bottom=202,h=bottom-top,left=55,right=345,bodyL=124,bodyR=276;
  // sombra suave no palco
@@ -432,11 +466,11 @@ else if(i==3){x.lineTo(0,150);x.fill();x.beginPath();x.moveTo(150,150);x.lineTo(
 else{x.lineTo(0,150);x.fill();[[10,90],[60,60],[110,100],[170,40],[230,80],[290,55],[345,95]].forEach(b=>x.fillRect(b[0],b[1],40,150-b[1]))}}
 function draw(dt){const i=P.i||0,l=LV[i],c=l.col,g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
 x.fillStyle='rgba(255,230,160,.9)';x.beginPath();x.arc(340,64+Math.sin(gt)*3,24,0,7);x.fill();x.fillStyle='rgba(0,0,0,.28)';sky(i);
-drawAccordion();
+if(P.play&&!P.done&&(l.ty==='seq'||l.ty==='run'))drawRhythmStage(l);else drawAccordion();
 x.fillStyle='rgba(0,0,0,.4)';x.fillRect(20,232,360,8);x.fillStyle=pr>.12?'#ffd45e':'#8a6d3b';x.fillRect(20,232,360*pr,8);
 if(l.ty=='swell'){x.fillStyle='rgba(60,220,120,.45)';x.fillRect(20+360*l.lo,228,360*(l.hi-l.lo),16)}
 x.font='600 13px Fraunces,Georgia,serif';x.fillStyle='#fff3dc';x.textAlign='left';x.fillText(l.c+' · '+l.y,12,20);x.fillText('FOLE · AR '+Math.round(pr*100)+'%',20,226);
-if(P.play&&!P.done){const r=l.s?P.step/l.s.length:l.ty=='swell'?P.hold/l.need:P.en/100;x.fillStyle='rgba(0,0,0,.4)';x.fillRect(12,30,200,8);x.fillStyle='#2a9d8f';x.fillRect(12,30,200*Math.min(1,r),8);if(P.t){x.fillStyle='#ffe08a';x.fillText(Math.max(0,l.lim-P.t).toFixed(1)+'s',220,38)}if(l.ty==='seq'||l.ty==='run'){const beat=60/104,phase=(gt%beat)/beat;x.font='800 8px system-ui';x.fillStyle='#ffe6a9';x.fillText('RITMO',254,24);for(let z=0;z<4;z++){x.fillStyle=z===P.step%4?'#ffcf63':'#fff0c4';x.beginPath();x.arc(260+z*35,43,5,0,Math.PI*2);x.fill()}x.fillStyle='#ffcf63';x.beginPath();x.arc(260+phase*105,56,3,0,Math.PI*2);x.fill()}}
+if(P.play&&!P.done){const r=l.s?P.step/l.s.length:l.ty=='swell'?P.hold/l.need:P.en/100;x.fillStyle='rgba(0,0,0,.4)';x.fillRect(12,30,200,8);x.fillStyle='#2a9d8f';x.fillRect(12,30,200*Math.min(1,r),8);if(P.t){x.fillStyle='#ffe08a';x.fillText(Math.max(0,l.lim-P.t).toFixed(1)+'s',220,38)}}
 // Partículas são emitidas no fole; não dependem de coordenadas removidas.
 parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;x.globalAlpha=Math.max(0,p.l);x.fillStyle='#ffe08a';x.font='18px serif';x.fillText('♪',p.x,p.y)});x.globalAlpha=1;parts=parts.filter(p=>p.l>0);
 if(P.play&&!P.done&&Object.keys(held).length&&Math.random()<.12)parts.push({x:210+Math.random()*130,y:90+Math.random()*60,vx:-18+Math.random()*36,vy:-45-Math.random()*30,l:.8});
