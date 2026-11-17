@@ -203,6 +203,19 @@ canvas{width:min(100%,calc(42dvh * 1.6),900px);max-height:42dvh;margin:6px auto;
 }
 
 
+/* Controles mais próximos e compactos, sem perder área de toque */
+#kb{gap:3px;padding-left:12px;padding-right:12px}
+#bs{gap:4px}
+#ks{gap:3px}
+.b{min-width:0}
+.k{min-width:0}
+@media(max-width:600px){
+ #kb{gap:2px;padding-left:7px;padding-right:7px}
+ #bs{gap:3px}
+ #ks{gap:2px}
+ .b{font-size:11px}
+ .k{font-size:12px}
+}
 /* FOLE 2.0 — palco, leitura e controles */
 #tools{align-items:center;min-height:42px}
 #pause{border:1px solid #ffffff25;border-radius:999px;padding:8px 14px;background:#172235;color:#f3d49a;font-weight:800;font-size:11px;cursor:pointer}
@@ -375,7 +388,13 @@ function rhythmTiming(){const c=rhythmConfig(),target=(P.rhythmStart||gt+2.2)+(P
 function down(id){
  init();if(held[id])return;
  const b=id[0]==='k',n=+id.slice(1);
+ // O fole precisa de ar para sustentar a execução: bombear antes e durante a música.
+ if(P.play&&!P.done&&['jam','seq','run'].includes(P.ty)&&pr<.16){
+  msg('Falta ar no fole! Arraste para a esquerda e para a direita para bombear, depois toque a próxima nota.');
+  return;
+ }
  held[id]=voice(b?[KF[n]]:BF[n],!b);
+ if(P.play&&!P.done&&['jam','seq','run'].includes(P.ty))pr=Math.max(0,pr-.035);
  const el=$('#'+id);el&&el.classList.add('on');
  if(P.ty==='jam'&&P.play&&!P.done){
   const type=b?'melodia':'baixo';
@@ -427,7 +446,7 @@ BN.forEach((n,i)=>mk('b'+i,'b',n+' · '+BL[i].toUpperCase()));KF.forEach((f,i)=>
 addEventListener('keydown',e=>{if(e.repeat)return;const k=e.key.toLowerCase();keys[k]=1;if(k.length==1){if(KL.includes(k))down('k'+KL.indexOf(k));else if(BL.includes(k))down('b'+BL.indexOf(k))}});
 addEventListener('keyup',e=>{const k=e.key.toLowerCase();keys[k]=0;if(k.length==1){if(KL.includes(k))up('k'+KL.indexOf(k));if(BL.includes(k))up('b'+BL.indexOf(k))}});
 function mv(e){const r=cv.getBoundingClientRect();bt=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));}
-cv.onpointerdown=e=>{init();drag=1;cv.setPointerCapture(e.pointerId);mv(e);msg('Fole aberto: mova o dedo para os lados para controlar o ar.');};cv.onpointermove=e=>drag&&mv(e);cv.onpointerup=cv.onpointercancel=()=>{drag=0;};
+cv.onpointerdown=e=>{init();drag=1;cv.setPointerCapture(e.pointerId);mv(e);msg('Bombeie o fole: mova o dedo para a esquerda e para a direita para manter a pressão do ar.');};cv.onpointermove=e=>drag&&mv(e);cv.onpointerup=cv.onpointercancel=()=>{drag=0;};
 function card(h,b,fn){ui.innerHTML=`<div class=card>${h}<button class=go id=ok>${b}</button></div>`;ui.style.display='flex';$('#ok').onclick=()=>{ui.style.display='none';fn()}}
 const msg=s=>$('#msg').textContent=s;
 function flash(){const f=$('#fl');f.style.animation='none';void f.offsetWidth;f.style.animation='fl .8s'}
@@ -551,7 +570,10 @@ function drawRhythmStage(l){
 }
 
 function drawAccordion(){
- const top=104,bottom=202,h=bottom-top,left=55,right=345,bodyL=124,bodyR=276;
+ const top=104,bottom=202,h=bottom-top;
+ // O corpo acompanha a pressão: o fole abre ao bombear e fecha ao soltar.
+ const opening=.72+Math.max(0,Math.min(1,bx))*.56;
+ const bodyL=200-76*opening,bodyR=200+76*opening,left=bodyL-69,right=bodyR+69;
  // sombra suave no palco
  x.save();x.shadowColor='#130b1b';x.shadowBlur=18;x.shadowOffsetY=9;
  // caixas laterais em madeira escura
@@ -600,7 +622,7 @@ chips();$('#journal').onclick=showJournal;$('#about').onclick=showAbout;
   $('#pause').onclick=()=>{if(!P.play||P.done)return;P.paused=!P.paused;if(P.paused){Object.keys(held).forEach(up);backing(0);$('#pause').textContent='▶ Retomar';msg('JOGO PAUSADO · seu progresso está preservado.');}else{init();backing(1);$('#pause').textContent='Ⅱ Pausar';msg('De volta ao ritmo!');}};
  $('#vol').oninput=e=>{volume=Number(e.target.value)/100;if(master)master.gain.setTargetAtTime(volume,ac.currentTime,.04);};
  $('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'Ativar som':'Silenciar';if(master)master.gain.setTargetAtTime(muted?0:volume,ac.currentTime,.04);};
- msg('Arraste o fole para controlar o ar · toque nas teclas para tocar');requestAnimationFrame(loop);
+ msg('Bombeie o fole arrastando para os lados: sem ar, as notas não saem. Toque nas teclas e nos baixos.');requestAnimationFrame(loop);
 ui.style.display='flex';ui.innerHTML=`<div class=card style="border:0;background:none"><h1>FOLE</h1><h2>A jornada de Mestre Sivuca</h2><p>Você acompanha <b>Mestre Sivuca</b> desde a infância em Itabaiana até sua consagração como músico de alcance internacional. Cada capítulo revela um momento real de sua trajetória e propõe um desafio musical inspirado nele.</p><button class=go id=n>Começar</button>${(save.current||(save.d>0&&save.d<LV.length))?'<button class=go id=cn>Continuar jornada</button>':''}<p class=f>Como jogar: arraste o fole para controlar o ar e toque nas teclas e nos baixos. As notas iluminadas indicam a sequência. O progresso do desafio é salvo automaticamente.</p><p class=f>As cenas e diálogos são dramatizações; não são falas reais de Sivuca ou de pessoas próximas. As escolhas mudam apenas a experiência do jogador, não os fatos históricos.</p></div>`;
 $('#n').onclick=()=>{save.current=null;sv();ui.style.display='none';init();arrive(0)};if($('#cn'))$('#cn').onclick=()=>{ui.style.display='none';init();if(save.current){const q=save.current;P={i:q.i,step:q.step,t:q.t,hold:q.hold,en:q.en,paused:0,jamLastType:q.jamLastType??null,last:null,bl:null,done:0,play:1,ty:q.ty,score:q.score,rhythmStart:gt+2.2,choice:q.choice,choiceBonus:q.choiceBonus,choiceText:q.choiceText,combo:q.combo,miss:q.miss,perfect:q.perfect,hits:q.hits||0,totalTiming:q.totalTiming||0};chips();refreshHud();$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';backing(1);msg('Desafio retomado do último ponto salvo.');}else arrive(Math.min(save.d,LV.length-1));};
 document.addEventListener('contextmenu',e=>e.preventDefault());
