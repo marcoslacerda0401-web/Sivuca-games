@@ -221,9 +221,24 @@ canvas{image-rendering:auto}
  #tools{justify-content:center}
 }
 
+
+/* Meta de aprovação e painel de desempenho */
+#goalbar{display:flex;align-items:center;gap:12px;padding:8px 18px;background:linear-gradient(90deg,#111a2a,#18243a,#111a2a);border-bottom:1px solid #ffffff18;color:#dce5f1;font-size:11px}
+#goaltext{white-space:nowrap;font-weight:800;letter-spacing:.04em}
+#goaltrack{height:8px;flex:1;min-width:50px;border-radius:99px;background:#ffffff16;overflow:hidden;box-shadow:inset 0 1px 3px #0008}
+#goalfill{display:block;width:0;height:100%;border-radius:99px;background:linear-gradient(90deg,#d79c52,#ffe09a);box-shadow:0 0 12px #f6c66e88;transition:width .2s}
+#goalpercent{min-width:36px;text-align:right;color:#f6d28c;font-weight:900;font-variant-numeric:tabular-nums}
+.card .pass-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0}
+.card .pass-panel>div{padding:13px 9px;border:1px solid #ffffff20;border-radius:14px;background:#ffffff08;text-align:center}
+.card .pass-panel b{display:block;color:#f6cf87;font-size:clamp(18px,4vw,25px)}
+.card .pass-panel small{color:#aebed0;font-size:10px;letter-spacing:.08em}
+.card .retry-note{padding:12px 14px;border-left:3px solid #e6a66f;background:#e6a66f12;border-radius:0 10px 10px 0}
+#msg{transition:background .2s}
+@media(max-width:520px){#goalbar{gap:7px;padding:7px 10px;font-size:9px}#goaltext{white-space:normal;max-width:43%}.card .pass-panel{gap:5px}.card .pass-panel>div{padding:10px 5px}}
+
 </style>
 <meta name="theme-color" content="#100d20"><meta name="description" content="Uma aventura musical e biográfica sobre Mestre Sivuca, músico paraibano."><meta property="og:type" content="website"><meta property="og:title" content="FOLE — A Jornada de Mestre Sivuca"><meta property="og:description" content="Uma aventura musical e biográfica pela trajetória de Mestre Sivuca."><meta name="color-scheme" content="dark"><link rel="icon" type="image/svg+xml" href="./favicon.svg">
-</head><body><div id="a"><div id="map" role="navigation" aria-label="Capítulos da jornada"></div><div id="tools"><button id="journal" type="button">📖 Diário</button><button id="about" type="button">✦ Sobre Sivuca</button><button id="pause" type="button" disabled>Ⅱ Pausar</button></div><div id="hud"><span class="tag" id="stage">JORNADA MUSICAL</span><span>⭐ <strong id="score">0</strong></span><span class="tag" id="best">Recorde: —</span></div><canvas id="c" width="800" height="500" role="img" aria-label="Ilustração da sanfona e indicador de pressão do fole"></canvas><div id="msg" role="status" aria-live="polite" aria-atomic="true"></div><div id="soundbar"><span>🔊 Som</span><input id="vol" type="range" min="0" max="100" value="72" aria-label="Volume do jogo"><button id="mute" type="button">Silenciar</button><span id="combo">Combo ×0</span></div><div id="kb" role="group" aria-label="Teclado musical: botões vermelhos para baixos e teclas claras para melodia"><div id="bs"></div><div id="ks"></div></div><div id="fl"></div><div id="travel" aria-live="polite"></div><div id="ui"></div></div>
+</head><body><div id="a"><div id="map" role="navigation" aria-label="Capítulos da jornada"></div><div id="tools"><button id="journal" type="button">📖 Diário</button><button id="about" type="button">✦ Sobre Sivuca</button><button id="pause" type="button" disabled>Ⅱ Pausar</button></div><div id="hud"><span class="tag" id="stage">JORNADA MUSICAL</span><span>⭐ <strong id="score">0</strong></span><span class="tag" id="best">Recorde: —</span></div><div id="goalbar" aria-live="polite"><span id="goaltext">Meta para avançar</span><div id="goaltrack"><i id="goalfill"></i></div><span id="goalpercent">0%</span></div><canvas id="c" width="800" height="500" role="img" aria-label="Ilustração da sanfona e indicador de pressão do fole"></canvas><div id="msg" role="status" aria-live="polite" aria-atomic="true"></div><div id="soundbar"><span>🔊 Som</span><input id="vol" type="range" min="0" max="100" value="72" aria-label="Volume do jogo"><button id="mute" type="button">Silenciar</button><span id="combo">Combo ×0</span></div><div id="kb" role="group" aria-label="Teclado musical: botões vermelhos para baixos e teclas claras para melodia"><div id="bs"></div><div id="ks"></div></div><div id="fl"></div><div id="travel" aria-live="polite"></div><div id="ui"></div></div>
 <script>
 const $=s=>document.querySelector(s),cv=$('#c'),x=cv.getContext('2d'),W=400,H=250,ui=$('#ui');
 x.scale(2,2);
@@ -277,12 +292,23 @@ scenes:[
 ]
 let P={i:0},held={},bx=.5,bt=.5,pb=.5,pr=0,drag=0,keys={},parts=[],gt=0;
 const scoreEl=$('#score'),bestEl=$('#best'),stageEl=$('#stage');
+function minimumScore(l){
+ if(l.ty==='seq'||l.ty==='run')return Math.ceil((l.s||[]).length*108);
+ if(l.ty==='jam')return 200;
+ if(l.ty==='swell')return 600;
+ return 0;
+}
 function refreshHud(){
   scoreEl.textContent=P.score||0;
   const comboEl=$('#combo');if(comboEl)comboEl.textContent='Combo ×'+(P.combo||0);
   const best=(save.best&&save.best[P.i])||0;
   bestEl.textContent='Recorde: '+(best?best:'—');
   stageEl.textContent='FASE '+(P.i+1)+' / '+LV.length+' · '+LV[P.i].n.toUpperCase();
+  const goal=minimumScore(LV[P.i]),score=P.score||0,ratio=goal?Math.min(100,Math.round(score/goal*100)):100;
+  const goalText=$('#goaltext'),fill=$('#goalfill'),percent=$('#goalpercent');
+  if(goalText)goalText.textContent='META '+goal+' PONTOS';
+  if(fill)fill.style.width=ratio+'%';
+  if(percent)percent.textContent=ratio+'%';
 }
 let master,compressor,pressureGain,backTimer=null,muted=false,volume=.72;
 function init(){
@@ -444,7 +470,17 @@ function showJournal(){
  const entries=LV.slice(0,save.d).map((l,i)=>`<p><b>${i+1}. ${l.c} · ${l.y}</b><br>${l.t}</p>`).join('');
  card(`<h2>Diário da jornada</h2>${entries||'<p>Complete um capítulo para registrar sua jornada.</p>'}<p class=f>As cenas e falas são dramatizações ficcionais, não declarações reais de Sivuca. A biografia foi baseada em registros da Fundação Joaquim Nabuco, UFPB, Rádio MEC e acervos musicais.</p>`,'Fechar',()=>{});
 }
-function win(){if(P.done)return;P.done=1;$('#pause').disabled=true;backing(0);const i=P.i,l=LV[i];
+function retryChallenge(){
+ const l=LV[P.i];P.step=0;P.t=0;P.hold=0;P.en=0;P.jamLastType=null;P.combo=0;P.miss=0;P.perfect=0;P.hits=0;P.totalTiming=0;P.score=0;P.done=0;P.play=1;P.paused=0;P.rhythmStart=gt+2.2;P.judgement='';P.choiceBonus=0;
+ $('#ui').style.display='none';$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';init();backing(1);refreshHud();checkpoint();msg('Nova tentativa! Alcance a pontuação mínima para avançar.');
+}
+function win(){if(P.done)return;const i=P.i,l=LV[i],required=minimumScore(l),earned=P.score||0;
+ if(earned<required){
+  P.done=1;P.play=0;$('#pause').disabled=true;backing(0);checkpoint();
+  card(`<div class=eyebrow>DESAFIO NÃO CONCLUÍDO</div><h2>Quase lá!</h2><p>Você terminou a execução, mas ainda precisa alcançar a pontuação mínima para seguir para a próxima cidade.</p><div class=pass-panel><div><b>${earned}</b><small>SUA PONTUAÇÃO</small></div><div><b>${required}</b><small>MÍNIMO</small></div><div><b>${Math.max(0,required-earned)}</b><small>FALTARAM</small></div></div><div class=retry-note>Experimente acertar mais notas no tempo certo e manter seu combo. A fase não será liberada até atingir a meta.</div>`,'Tentar novamente',retryChallenge);
+  return;
+ }
+ P.done=1;$('#pause').disabled=true;backing(0);
   const bonus=Math.max(0,Math.round((l.ty==='run'?Math.max(0,l.lim-P.t):0)*35));
   P.score=(P.score||0)+bonus+(P.choiceBonus||0);
   save.best=save.best||{};save.best[i]=Math.max(save.best[i]||0,P.score);if(!save.ach.includes(l.a))save.ach.push(l.a);save.d=Math.max(save.d,i+1);save.choices=save.choices||[];save.choices[i]=P.choiceText||'';save.current=null;sv();chips();refreshHud();
