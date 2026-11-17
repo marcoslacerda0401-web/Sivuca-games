@@ -293,7 +293,7 @@ scenes:[
 let P={i:0},held={},bx=.5,bt=.5,pb=.5,pr=0,drag=0,keys={},parts=[],gt=0;
 const scoreEl=$('#score'),bestEl=$('#best'),stageEl=$('#stage');
 function minimumScore(l){
- if(l.ty==='seq'||l.ty==='run')return Math.ceil((l.s||[]).length*108);
+ if(l.ty==='seq'||l.ty==='run')return Math.ceil((l.s||[]).length*(145+(P.i||0)*3));
  if(l.ty==='jam')return 200;
  if(l.ty==='swell')return 600;
  return 0;
@@ -370,7 +370,8 @@ function backing(on){
   step++;
  },beat);
 }
-function rhythmTiming(){const beat=.72,target=(P.rhythmStart||gt+2.2)+(P.step||0)*beat,offset=gt-target,abs=Math.abs(offset);return {target,offset,abs,grade:abs<=.11?'PERFEITO':abs<=.23?'BOM':abs<=.36?'OK':'FORA DO TEMPO'}}
+function rhythmConfig(){const i=P.i||0;return {beat:Math.max(.48,.72-i*.04),perfect:Math.max(.055,.11-i*.008),good:Math.max(.12,.23-i*.012),ok:Math.max(.20,.36-i*.018)}}
+function rhythmTiming(){const c=rhythmConfig(),target=(P.rhythmStart||gt+2.2)+(P.step||0)*c.beat,offset=gt-target,abs=Math.abs(offset);return {target,offset,abs,grade:abs<=c.perfect?'PERFEITO':abs<=c.good?'BOM':abs<=c.ok?'OK':'FORA DO TEMPO'}}
 function down(id){
  init();if(held[id])return;
  const b=id[0]==='k',n=+id.slice(1);
@@ -397,17 +398,17 @@ function down(id){
   const sequence=LV[P.i].s||[],expected=sequence[P.step];
   if(sequence.length&&expected){
    const timing=rhythmTiming();
-   if(timing.offset < -0.36){
+   if(timing.offset < -rhythmConfig().ok){
     msg('Muito cedo! Espere a nota chegar à linha de execução.');
    }else{
     const correct=id===expected;
     P.lastHit=id;P.step++;P.judgementAt=gt;P.lastOffset=timing.offset;
-    if(correct&&timing.abs<=.36){
+    if(correct&&timing.abs<=rhythmConfig().ok){
      P.judgement=timing.grade;P.judgementColor=timing.grade==='PERFEITO'?'#ffe08a':timing.grade==='BOM'?'#a6e7d2':'#b8d5ff';
-     P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+(timing.grade==='PERFEITO'?1:0);
-     P.score=(P.score||0)+(timing.grade==='PERFEITO'?180:timing.grade==='BOM'?120:70);
+     P.combo=(P.combo||0)+1;P.score+=(P.combo>=5?15:P.combo>=3?8:0);P.perfect=(P.perfect||0)+(timing.grade==='PERFEITO'?1:0);
+     P.score=(P.score||0)+(timing.grade==='PERFEITO'?180:timing.grade==='BOM'?130:timing.grade==='OK'?90:0);
      P.hits=(P.hits||0)+1;P.totalTiming=(P.totalTiming||0)+timing.abs;
-     msg(timing.grade+' · '+(timing.offset<0?'adiantado':'atrasado')+' '+Math.round(timing.abs*1000)+' ms');
+     msg(timing.grade+' · '+(timing.offset<0?'adiantado':'atrasado')+' '+Math.round(timing.abs*1000)+' ms · combo ×'+P.combo);
     }else{
      P.judgement=correct?'FORA DO TEMPO':'NOTA ERRADA';P.judgementColor='#ff9c88';
      P.combo=0;P.miss=(P.miss||0)+1;P.score=(P.score||0)+10;
@@ -489,8 +490,8 @@ else card(`<h2>O legado continua</h2><p>Você acompanhou sete capítulos da vida
 function logic(dt){if(!P.play||P.done||P.paused)return;const l=LV[P.i];
 if(l.ty==='seq'||l.ty==='run'){
  if(l.ty==='run'&&P.t){P.t+=dt;if(P.t>l.lim){P.step=0;P.t=0;P.combo=0;P.bl=null;P.rhythmStart=gt+2.2;msg('O tempo acabou. A sequência foi reiniciada; siga a tecla iluminada.');refreshHud();}}
- const seq=l.s||[],target=(P.rhythmStart||gt+2.2)+(P.step||0)*.72;
- if(seq[P.step]&&gt>target+.36){
+ const seq=l.s||[],target=(P.rhythmStart||gt+2.2)+(P.step||0)*rhythmConfig().beat;
+ if(seq[P.step]&&gt>target+rhythmConfig().ok){
   P.step++;P.combo=0;P.miss=(P.miss||0)+1;P.judgement='NOTA PERDIDA';P.judgementColor='#ff9c88';P.judgementAt=gt;
   msg('Nota perdida! Acompanhe a próxima na linha de execução.');checkpoint();refreshHud();
   if(P.step>=seq.length)win();
@@ -503,7 +504,7 @@ else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 
 function rhythmLane(id){return id[0]==='k'?Math.floor(+id.slice(1)/2):4+Math.floor(+id.slice(1)/2)}
 function drawRhythmStage(l){
- const names=['MEL 1 · A/S','MEL 2 · D/F','MEL 3 · G/H','MEL 4 · J/K','BAIXO · Z/X','BAIXO · C/V'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4','#e6a36f','#8db6ef'],left=16,lw=61,top=53,bottom=211,hit=183,beat=.72,start=P.rhythmStart||gt+2.2,seq=l.s||[];
+ const names=['MEL 1 · A/S','MEL 2 · D/F','MEL 3 · G/H','MEL 4 · J/K','BAIXO · Z/X','BAIXO · C/V'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4','#e6a36f','#8db6ef'],left=16,lw=61,top=53,bottom=211,hit=183,beat=rhythmConfig().beat,start=P.rhythmStart||gt+2.2,seq=l.s||[];
  // Cada cidade recebe uma silhueta própria, com luzes de palco.
  x.fillStyle='#080e1b';x.fillRect(0,0,W,H);
  const skylines=[
