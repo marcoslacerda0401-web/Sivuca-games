@@ -1,0 +1,351 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FOLE — A jornada de Mestre Sivuca</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,900;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#fff4df;--sun:#ffd166;--red:#ef765b;--night:#100d20;
+  --panel:rgba(25,19,43,.94);--line:rgba(255,209,102,.35);
+  box-sizing:border-box
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--night);color:var(--ink);
+  font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif;overflow:hidden;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none}
+body{
+  background:
+    radial-gradient(ellipse at 50% -15%,rgba(124,73,142,.38),transparent 55%),
+    linear-gradient(160deg,#17102a,#090b18 80%);
+}
+#a{position:relative;width:min(100vw,650px);height:100dvh;margin:auto;display:flex;
+  flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+#map{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:8px 6px 6px;background:rgba(14,10,25,.88);
+  border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+#map button{min-width:0;font:700 10px/1.1 ui-rounded,system-ui,sans-serif;padding:9px 3px;
+  border:1px solid #57466f;border-radius:10px;background:#251d39;color:#c9bbdc;
+  transition:.2s}
+#map button.cur{background:linear-gradient(135deg,#ffe08a,#f4ae42);color:#281735;
+  border-color:#ffe08a;box-shadow:0 0 18px #ffd16655}
+#map button.done{color:#ffd166;border-color:#9d7740}
+#map button.lock{opacity:.42}
+#tools{display:flex;justify-content:flex-end;gap:7px;padding:5px 10px 0}#tools button{border:1px solid var(--line);border-radius:16px;padding:6px 11px;background:#251d39;color:#ffe3a2;font-weight:700;font-size:11px}
+#journal{margin:0}
+#hud{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:7px 12px;background:rgba(26,20,42,.76);font-size:11px;color:#d9cde9}
+#hud strong{color:var(--sun);font-size:13px}
+#hud .tag{border:1px solid var(--line);border-radius:20px;padding:5px 9px}
+canvas{width:100%;height:auto;max-height:34vh;aspect-ratio:400/250;display:block;
+  touch-action:none;background:#171027}
+#msg{padding:9px 12px;min-height:43px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;background:rgba(25,19,43,.95);text-align:center;color:#f7e8ce;
+  border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid var(--line)}
+#soundbar{display:flex;align-items:center;gap:9px;padding:5px 12px;background:#171126;color:#e8d9c8;font-size:11px;border-bottom:1px solid #ffffff18}#vol{flex:1;min-width:40px;accent-color:#ffd166}#mute{border:1px solid #80674f;border-radius:14px;padding:5px 9px;background:#30233a;color:#ffe9c5;font-size:11px}#combo{color:#ffd166;font-weight:800;min-width:55px;text-align:right}
+#kb{flex:1;min-height:0;display:flex;flex-direction:column;gap:9px;
+  padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,#38251f,#1d151c);border-top:1px solid #a96b45}
+#bs{display:flex;gap:7px;flex:0 0 auto}
+#ks{display:flex;gap:6px;flex:1;min-height:70px}
+.b{flex:1;min-width:0;height:48px;border:1px solid #f3c66b;border-radius:11px;
+  background:linear-gradient(145deg,#a7432e,#68251f);color:#fff2d6;
+  font:700 12px ui-rounded,system-ui,sans-serif;box-shadow:0 4px 0 #401a1a;touch-action:none}
+.k{flex:1;min-width:0;min-height:70px;border:1px solid #d9cdb6;
+  border-radius:7px 7px 14px 14px;background:linear-gradient(180deg,#fffdf5,#e7dcc5);
+  color:#604635;font:800 13px ui-rounded,system-ui,sans-serif;box-shadow:0 5px 0 #b6a68b;touch-action:none}
+.on{transform:translateY(4px);filter:brightness(.92);box-shadow:0 1px 0 #9b7d55}
+.nx{animation:pulse .65s infinite alternate;outline:2px solid #ffe08a;
+  box-shadow:0 0 17px 4px #ffd16699}
+@keyframes pulse{to{filter:brightness(1.18)}}
+#ui{position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;
+  padding:20px;background:rgba(8,7,17,.78);backdrop-filter:blur(9px)}
+.card{width:min(440px,90%);max-height:88%;overflow:auto;text-align:center;
+  padding:25px 22px;border:1px solid rgba(255,209,102,.75);border-radius:22px;
+  background:linear-gradient(150deg,rgba(43,31,62,.98),rgba(19,16,35,.98));
+  box-shadow:0 22px 70px #0009,0 0 35px #f4b94218;animation:up .35s ease}
+@keyframes up{from{opacity:0;transform:translateY(18px)}}
+h1{font-size:clamp(54px,17vw,86px);margin:0;font-weight:950;letter-spacing:7px;
+  background:linear-gradient(180deg,#fff0b4,#f5ad45 65%,#df694f);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h2{margin:0 0 8px;color:var(--sun);font-size:24px}
+p{line-height:1.55;font-size:14px;color:#f0e5d5}
+em{color:#d9c1e8;font-style:normal;font-size:12px}
+.f{font-size:11px;color:#b9a9c9}
+.go{font:800 15px ui-rounded,system-ui,sans-serif;margin:7px 4px;padding:12px 23px;border:0;border-radius:30px;
+  background:linear-gradient(135deg,#ffe08a,#f3ad43);color:#291932;
+  box-shadow:0 5px 0 #9d632c;cursor:pointer}
+.go:active{transform:translateY(3px);box-shadow:0 2px 0 #9d632c}
+.statline{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px 0}
+.stat{padding:9px 13px;border:1px solid var(--line);border-radius:12px;background:#ffffff09}
+.stat b{display:block;color:var(--sun);font-size:18px}
+.card .eyebrow{letter-spacing:1.5px;color:#d8b8ee;font-size:10px;font-weight:800}
+.card .fact{padding:10px 12px;margin:10px 0;border-left:3px solid var(--sun);background:#ffffff0b;text-align:left;border-radius:0 10px 10px 0}
+.card .choice.selected{outline:2px solid #ffe08a;filter:brightness(1.12)}
+#msg strong{color:var(--sun)}
+#fl{position:absolute;inset:0;z-index:4;background:#fff3dc;opacity:0;pointer-events:none}
+@keyframes fl{0%{opacity:.9}100%{opacity:0}}
+@media(max-height:680px){
+  #map{padding:6px}#map button{padding:6px 1px;font-size:9px}
+  #hud{padding:4px 10px}canvas{max-height:29vh}
+  #msg{min-height:34px;padding:5px 8px;font-size:12px}#soundbar{padding:3px 8px}
+  #kb{gap:6px;padding:7px 9px calc(8px + env(safe-area-inset-bottom,0px))}
+  .b{height:40px}#ks{min-height:58px}.k{min-height:58px}
+}
+@media(max-width:390px){#map button{font-size:8px;padding:6px 0}#journal{margin-top:4px}}
+@media(min-width:560px){
+  #a{border-left:1px solid #ffffff12;border-right:1px solid #ffffff12;
+    box-shadow:0 0 70px #0008}
+}
+</style>
+<meta name="theme-color" content="#100d20"><meta name="description" content="Uma aventura musical e biográfica sobre Mestre Sivuca, músico paraibano.">
+</head><body><div id="a"><div id="map"></div><div id="tools"><button id="journal" type="button">📖 Diário</button><button id="about" type="button">✦ Sobre Sivuca</button></div><div id="hud"><span class="tag" id="stage">JORNADA MUSICAL</span><span>⭐ <strong id="score">0</strong></span><span class="tag" id="best">Recorde: —</span></div><canvas id="c" width="400" height="250"></canvas><div id="msg"></div><div id="soundbar"><span>🔊 Som</span><input id="vol" type="range" min="0" max="100" value="72" aria-label="Volume do jogo"><button id="mute" type="button">Silenciar</button><span id="combo">Combo ×0</span></div><div id="kb"><div id="bs"></div><div id="ks"></div></div><div id="fl"></div><div id="ui"></div></div>
+<script>
+const $=s=>document.querySelector(s),cv=$('#c'),x=cv.getContext('2d'),W=400,H=250,ui=$('#ui');
+let ac,mg,bk,save={d:0,ach:[],best:{},choices:[]};
+try{Object.assign(save,JSON.parse(localStorage.fole||'{}'))}catch(e){}
+const sv=()=>{try{localStorage.fole=JSON.stringify(save)}catch(e){}};
+const KF=[392,440,494,523,587,659,698,784],BF=[[98,147,196],[131,196,262],[147,220,294],[87,131,175]],KL='asdfghjk',BL='zxcv',BN=['Sol','Dó','Ré','Fá'];
+const LV=[
+{c:'Itabaiana',n:'Itabaiana',y:'1939–1945',col:['#3b1d6e','#e07a3a'],t:'Severino Dias de Oliveira nasceu em Itabaiana, Paraíba, em 26 de maio de 1930. Em 13 de junho de 1939, aos nove anos, seu pai levou para casa uma sanfona de dois baixos que havia comprado para o irmão. O menino começou a experimentar o instrumento — e não parou mais.',tip:'Explore o primeiro tema: controle o fole e acompanhe as notas iluminadas.',g:'Primeiro tema: fole + melodia',ty:'seq',s:['k0','k1','k2','k4','k2','k1','k0'],o:'A infância em Itabaiana foi o primeiro capítulo de uma trajetória que atravessaria fronteiras.',a:'Primeiro acorde',
+scenes:[
+['Uma sanfona chega','Itabaiana, 13 de junho de 1939. A casa não é conhecida por ser um centro musical. Naquele dia, porém, uma sanfona entra na história da família.','Narrador','A sanfona não chega como um troféu. É apenas um instrumento — mas, nas mãos do menino Severino, abre uma possibilidade inesperada.'],
+['O som encontra seu caminho','Sem músicos na família, Severino aprende a tocar de maneira autodidata. A prática transforma a curiosidade inicial em domínio do instrumento.','Voz dramatizada — familiar','“Tente mais uma vez. Cada tentativa encontra um som diferente.”'],
+['As primeiras apresentações','Ainda criança e adolescente, Sivuca toca em festas, casamentos e encontros populares pelo interior. A música passa a fazer parte de sua vida cotidiana.','Narrador','O menino que aprendeu a explorar a sanfona começa a descobrir o que significa tocar para os outros.']
+]},
+{c:'Recife',n:'Recife',y:'1945–1950',col:['#14405a','#2a9d8f'],t:'Aos 15 anos, Sivuca segue para Recife e participa do programa de calouros Divertimentos Guararapes, na Rádio Clube de Pernambuco. O maestro Nelson Ferreira o apresenta ao público com o nome artístico Sivuca. Em 1948, estuda harmonia e arranjo com Guerra-Peixe e trabalha na Rádio Jornal do Commercio. Em 1950, grava em parceria com Humberto Teixeira.',tip:'Alterne os baixos com a melodia para construir uma levada.',g:'Baixo + melodia: siga o brilho',ty:'seq',s:['b0','k4','k3','k4','b1','k3','k2','k3','b0'],o:'Recife transforma o talento em profissão e prepara Sivuca para novos palcos.',a:'Baião no baixo',
+scenes:[
+['Uma cidade maior','Aos 15 anos, Severino deixa Itabaiana e segue para Recife. Em 1945, participa do programa de calouros Divertimentos Guararapes, na Rádio Clube de Pernambuco.','Narrador','Na Rádio Clube de Pernambuco, ele começa a construir sua trajetória profissional.'],
+['Um nome para os palcos','O maestro Nelson Ferreira considera o nome Severino Dias de Oliveira comprido para os palcos e sugere Sivuca. O apelido acompanha o músico pelo resto da carreira.','Voz dramatizada — colega de rádio','“O rádio abre uma porta. O estudo ajuda a atravessá-la.”'],
+['Aprender e gravar','Em 1948, Sivuca estuda harmonia e orquestração com Guerra-Peixe e passa a trabalhar na Rádio Jornal do Commercio. Em 1950, grava com Humberto Teixeira repertório ligado ao baião; “Adeus, Maria Fulô” se tornaria uma de suas gravações marcantes.','Narrador','A sanfona agora viaja também pelas ondas do rádio e pelos discos.']
+]},
+{c:'Rio de Janeiro',n:'Rio',y:'1955–1958',col:['#7a1f3d','#f2a65a'],t:'Em abril de 1955, Sivuca muda-se para o Rio de Janeiro e trabalha como artista contratado da Rádio e TV Tupi. A cidade amplia seu contato com a cena musical brasileira.',tip:'Toque a corrida de notas no tempo indicado.',g:'Corrida de notas: complete a sequência',ty:'run',lim:9,s:['k0','k1','k2','k3','k4','k5','k6','k7','k6','k5'],o:'A experiência no rádio e na televisão amplia o alcance de sua música e abre caminho para apresentações internacionais.',a:'Dedos velozes',
+scenes:[
+['Chegada ao Rio','Abril de 1955. Sivuca chega ao Rio de Janeiro, um dos grandes centros de produção cultural do país. A mudança marca uma nova etapa de sua carreira.','Narrador','A cidade oferece estúdios, emissoras e encontros com músicos de diferentes trajetórias.'],
+['Rádio e televisão','Durante cerca de três anos, Sivuca trabalha como artista contratado da Rádio e TV Tupi. O público passa a conhecer melhor seu trabalho.','Voz dramatizada — produtor','“O programa está prestes a começar. Prepare a sanfona.”'],
+['Novas possibilidades','A rotina de apresentações exige versatilidade. O instrumento que nasceu ligado às festas populares também encontra espaço em novos formatos e públicos.','Narrador','O próximo passo será levar essa sonoridade para além do Brasil.']
+]},
+{c:'Europa',n:'Europa',y:'1958–1964',col:['#1c1a40','#8e5ea2'],t:'Em 1958, Sivuca integra o grupo Os Brasileiros em uma turnê pela Europa. Depois vive em Lisboa e, a partir de 1959, trabalha em Paris por cerca de quatro anos. A experiência amplia seus encontros musicais e culturais.',tip:'Sustente a nota e controle o fole com calma.',g:'Sustente a nota na faixa de pressão',ty:'swell',k:'k2',lo:.3,hi:.7,need:4,o:'A experiência europeia prepara uma nova mudança: Nova York.',a:'Fole controlado',
+scenes:[
+['Do outro lado do Atlântico','Em 1958, depois de apresentações na Europa, Sivuca decide viver em Lisboa. A viagem representa uma mudança importante: sua música passa a circular em outro contexto cultural.','Narrador','A distância não apaga suas referências. Ela cria novas possibilidades de escuta.'],
+['Paris','No ano seguinte, Sivuca segue para Paris e permanece na cidade por quatro anos. A capital francesa reúne artistas, estilos e públicos variados.','Voz dramatizada — músico','“Escute primeiro. Depois descubra como sua própria música conversa com o que encontrou.”'],
+['Uma linguagem em expansão','A vivência fora do Brasil amplia os horizontes do instrumentista e arranjador. Sua trajetória passa a conectar experiências brasileiras e internacionais.','Narrador','A próxima etapa o levará aos Estados Unidos.']
+]},
+{c:'Nova York',n:'N. York',y:'1964–1975',col:['#0b1d3a','#e76f51'],t:'Em 1964, Sivuca muda-se para Nova York. Atua como diretor musical em gravações da cantora sul-africana Miriam Makeba, excursiona por diferentes países e amplia sua atuação como arranjador e compositor, inclusive em projetos para cinema.',tip:'Alterne uma tecla branca de melodia e um botão vermelho de baixo. Cada alternância completa parte da barra.',g:'Improviso: alterne melodia e baixos até completar 100%',ty:'jam',o:'Depois de anos de trabalho internacional, Sivuca retorna ao Brasil em 1975.',a:'Improvisador',
+scenes:[
+['Uma nova cidade','Em 1964, Sivuca muda-se para Nova York. A cidade reúne músicos de muitas origens e oferece novos caminhos de trabalho.','Narrador','A sanfona segue com ele, mas sua atuação musical vai além de um único instrumento ou estilo.'],
+['Miriam Makeba','Sivuca trabalha com a cantora Miriam Makeba, participando de gravações e atividades musicais. A colaboração o conecta a uma carreira internacional intensa.','Voz dramatizada — músico da equipe','“A música precisa conversar com quem está ouvindo, mesmo quando todos vêm de lugares diferentes.”'],
+['Música sem fronteiras','Ao longo desses anos, Sivuca excursiona pelo mundo, grava em países como Suécia e Japão e participa de projetos variados, levando a sanfona a contextos musicais diferentes.','Narrador','Em 1975, ele retorna ao Brasil com uma bagagem artística construída em muitos lugares.']
+]},
+{c:'Brasil',n:'Brasil',y:'1975–2003',col:['#174b3c','#e0a84f'],t:'De volta ao Brasil em meados da década de 1970, Sivuca inicia uma fase intensa de criação e parcerias. Com a compositora Glória Gadelha, constrói uma colaboração marcante que inclui “Feira de Mangaio”. Também compõe “João e Maria” com Chico Buarque.',tip:'Construa uma frase musical combinando baixos e melodia.',g:'Crie sua própria frase musical',ty:'jam',o:'A carreira continua em movimento, unindo repertório popular, arranjos e novas experiências.',a:'Música de encontro',
+scenes:[
+['O retorno','Em 1975, depois de cerca de doze anos nos Estados Unidos, Sivuca retorna ao Brasil. Ele volta com experiência internacional e vontade de continuar divulgando a música brasileira.','Narrador','O retorno não é um ponto final. É o começo de uma nova fase de criação e colaboração.'],
+['Glória Gadelha','Sivuca desenvolve uma parceria artística importante com a compositora Glória Gadelha. Juntos, criam músicas que se tornam parte do repertório brasileiro.','Voz dramatizada — parceira musical','“Uma ideia pode começar pequena e crescer quando duas pessoas criam juntas.”'],
+['Feira de Mangaio','“Feira de Mangaio”, parceria com Glória Gadelha, torna-se uma de suas obras mais conhecidas. Sivuca também compõe “João e Maria” com Chico Buarque e mantém outras colaborações.','Narrador','Sua música continua dialogando com a tradição e com novas sonoridades.']
+]},
+{c:'João Pessoa',n:'Legado',y:'2003–2006',col:['#26345c','#d58b59'],t:'Em 2003, Sivuca fixa residência em João Pessoa. Continua criando e revisitando sua obra; em 2006, lança “Sivuca Sinfônico”, com arranjos para a Orquestra Sinfônica do Recife. Morre em 14 de dezembro de 2006, em João Pessoa, deixando um legado que permanece vivo.',tip:'Faça uma última interpretação: toque a sequência final.',g:'Última interpretação: toque a melodia',ty:'seq',s:['k0','k2','k4','k5','k4','k2','k1','k0'],o:'A jornada termina, mas a música continua sendo tocada, estudada e compartilhada.',a:'Legado musical',
+scenes:[
+['A sanfona e a orquestra','Em 2006, “Sivuca Sinfônico” apresenta arranjos do próprio músico em diálogo com a Orquestra Sinfônica do Recife. A sanfona ocupa o centro de uma obra que aproxima linguagens populares e orquestrais.','Narrador','A trajetória de um instrumento popular encontra novas formas de expressão.'],
+['De volta à Paraíba','Em 2003, Sivuca fixa residência em João Pessoa. Em 14 de dezembro de 2006, aos 76 anos, falece na capital paraibana.','Narrador','Sua história permanece ligada à Paraíba e à música brasileira.'],
+['O som permanece','De Itabaiana aos palcos internacionais, a trajetória de Sivuca atravessa rádio, televisão, discos, parcerias e concertos.','Narrador','O legado não é apenas uma lista de lugares ou apresentações: é a música que continua encontrando novos ouvintes.']
+]}
+]
+let P={i:0},held={},bx=.5,bt=.5,pb=.5,pr=0,drag=0,keys={},parts=[],gt=0;
+const scoreEl=$('#score'),bestEl=$('#best'),stageEl=$('#stage');
+function refreshHud(){
+  scoreEl.textContent=P.score||0;
+  const comboEl=$('#combo');if(comboEl)comboEl.textContent='Combo ×'+(P.combo||0);
+  const best=(save.best&&save.best[P.i])||0;
+  bestEl.textContent='Recorde: '+(best?best:'—');
+  stageEl.textContent='FASE '+(P.i+1)+' / '+LV.length+' · '+LV[P.i].n.toUpperCase();
+}
+let master,compressor,pressureGain,backTimer=null,muted=false,volume=.72;
+function init(){
+ if(ac){if(ac.state==='suspended')ac.resume();return}
+ ac=new(window.AudioContext||window.webkitAudioContext)();
+ pressureGain=ac.createGain();pressureGain.gain.value=0;
+ master=ac.createGain();master.gain.value=muted?0:volume;
+ compressor=ac.createDynamicsCompressor();
+ compressor.threshold.value=-20;compressor.knee.value=18;compressor.ratio.value=3;
+ compressor.attack.value=.008;compressor.release.value=.18;
+ pressureGain.connect(master);master.connect(compressor);compressor.connect(ac.destination);
+}
+function voice(fs,bass){
+ const t=ac.currentTime,g=ac.createGain(),pan=ac.createStereoPanner();
+ const filter=ac.createBiquadFilter();filter.type='lowpass';filter.frequency.value=bass?1250:3600;filter.Q.value=.55;
+ g.gain.setValueAtTime(.0001,t);
+ g.gain.exponentialRampToValueAtTime(bass?.19:.145,t+.045);
+ g.connect(filter);filter.connect(pan);pan.pan.value=bass?-.08:((Math.random()-.5)*.18);pan.connect(pressureGain);
+ const os=[],partials=bass?[[1,'triangle',.72],[2,'sine',.2],[3,'sine',.08]]:[[1,'sawtooth',.42],[1.002,'triangle',.25],[2,'sine',.17],[3,'sine',.09],[4,'sine',.045]];
+ fs.forEach(f=>partials.forEach(([ratio,type,amp])=>{
+  const o=ac.createOscillator(),og=ac.createGain();
+  o.type=type;o.frequency.value=f*ratio;o.detune.value=(Math.random()-.5)*(bass?2.5:5);
+  og.gain.value=amp/fs.length;o.connect(og).connect(g);o.start();os.push(o);
+ }));
+ // Subtle shared reed-like beating, without a harsh buzzer tone.
+ const lfo=ac.createOscillator(),lg=ac.createGain();lfo.frequency.value=5.2;lg.gain.value=.012;
+ lfo.connect(lg).connect(g.gain);lfo.start();
+ return ()=>{
+  const now=ac.currentTime;g.gain.cancelScheduledValues(now);g.gain.setTargetAtTime(.0001,now,.075);
+  os.forEach(o=>{try{o.stop(now+.35)}catch(e){}});
+  try{lfo.stop(now+.35)}catch(e){}
+  setTimeout(()=>{try{g.disconnect();filter.disconnect();pan.disconnect()}catch(e){}},500);
+ };
+}
+function pluck(f,d=.32,level=.055){
+ const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),p=ac.createStereoPanner();
+ o.type='triangle';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f*.985),t+d);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(level,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ p.pan.value=(Math.random()-.5)*.35;o.connect(g).connect(p).connect(master);o.start(t);o.stop(t+d+.03);
+}
+function drum(kind){
+ const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+ if(kind==='kick'){o.type='sine';o.frequency.setValueAtTime(105,t);o.frequency.exponentialRampToValueAtTime(42,t+.13);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.16);}
+ else{o.type='triangle';o.frequency.value=kind==='snare'?185:720;g.gain.setValueAtTime(kind==='snare'?.045:.018,t);g.gain.exponentialRampToValueAtTime(.001,t+(kind==='snare'?.09:.035));}
+ o.connect(g).connect(master);o.start(t);o.stop(t+.18);
+}
+function backing(on){
+ clearInterval(backTimer);backTimer=null;if(!on||!ac)return;
+ let step=0;const bpm=104,beat=60000/bpm/4;
+ const progression=[[196,247,294],[174.6,220,261.6],[146.8,185,220],[164.8,207.7,246.9]];
+ backTimer=setInterval(()=>{
+  if(!ac||ac.state!=='running')return;
+  const bar=Math.floor(step/16)%progression.length,ch=progression[bar],s=step%16;
+  if(s%4===0){drum('kick');pluck(ch[0]/2,.48,.075);}
+  if(s===4||s===12)drum('snare');
+  if(s%2===0)drum('hat');
+  if(s===2||s===6||s===10||s===14){pluck(ch[1],.23,.032);pluck(ch[2],.25,.026);}
+  if(s===8)pluck(ch[0],.34,.045);
+  step++;
+ },beat);
+}
+function down(id){
+ init();if(held[id])return;
+ const b=id[0]==='k',n=+id.slice(1);
+ held[id]=voice(b?[KF[n]]:BF[n],!b);
+ const el=$('#'+id);el&&el.classList.add('on');
+ if(P.ty==='jam'&&P.play&&!P.done){
+  const type=b?'melodia':'baixo';
+  if(P.last!==id){
+   if(P.jamLastType===null||P.jamLastType!==type){
+    P.en=Math.min(100,(P.en||0)+12.5);
+    P.jamLastType=type;
+    P.combo=(P.combo||0)+1;
+    P.score=(P.score||0)+25+Math.min(75,P.combo*3);
+    refreshHud();
+    msg(P.en>=100?'Improviso completo!':`Boa! Improviso ${Math.round(P.en)}% · agora alterne ${type==='melodia'?'um baixo':'uma nota de melodia'}.`);
+    checkpoint();
+   }else{
+    msg(`Agora toque ${type==='melodia'?'um baixo (tecla vermelha)':'uma nota de melodia (tecla branca)'} para continuar o improviso.`);
+   }
+   P.last=id;
+  }
+ }
+ if((P.ty==='seq'||P.ty==='run')&&P.play&&!P.done){
+  const expected=LV[P.i].s[P.step];
+  if(id===expected){P.lastHit=id;}
+  else if(id!==P.lastWrong){P.combo=0;P.miss=(P.miss||0)+1;P.lastWrong=id;msg('Ouça a frase e tente a próxima nota.');refreshHud();}
+ }
+}
+function up(id){if(held[id]){held[id]();delete held[id]}if(P.last===id)P.last=null;if(P.lastWrong===id)P.lastWrong=null;const e=$('#'+id);e&&e.classList.remove('on')}
+function mk(id,c,l){const b=document.createElement('button');b.id=id;b.className=c;b.textContent=l;b.onpointerdown=e=>{e.preventDefault();down(id)};['pointerup','pointerleave','pointercancel'].forEach(v=>b['on'+v]=()=>up(id));$(id[0]=='b'?'#bs':'#ks').appendChild(b)}
+BN.forEach((n,i)=>mk('b'+i,'b',n+' · '+BL[i].toUpperCase()));KF.forEach((f,i)=>mk('k'+i,'k',KL[i].toUpperCase()));
+addEventListener('keydown',e=>{if(e.repeat)return;const k=e.key.toLowerCase();keys[k]=1;if(k.length==1){if(KL.includes(k))down('k'+KL.indexOf(k));else if(BL.includes(k))down('b'+BL.indexOf(k))}});
+addEventListener('keyup',e=>{const k=e.key.toLowerCase();keys[k]=0;if(k.length==1){if(KL.includes(k))up('k'+KL.indexOf(k));if(BL.includes(k))up('b'+BL.indexOf(k))}});
+function mv(e){const r=cv.getBoundingClientRect();bt=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));}
+cv.onpointerdown=e=>{init();drag=1;cv.setPointerCapture(e.pointerId);mv(e);msg('Fole aberto: mova o dedo para os lados para controlar o ar.');};cv.onpointermove=e=>drag&&mv(e);cv.onpointerup=cv.onpointercancel=()=>{drag=0;};
+function card(h,b,fn){ui.innerHTML=`<div class=card>${h}<button class=go id=ok>${b}</button></div>`;ui.style.display='flex';$('#ok').onclick=()=>{ui.style.display='none';fn()}}
+const msg=s=>$('#msg').textContent=s;
+function flash(){const f=$('#fl');f.style.animation='none';void f.offsetWidth;f.style.animation='fl .8s'}
+function chips(){$('#map').innerHTML='';LV.forEach((l,i)=>{const b=document.createElement('button');b.textContent=l.n;b.className=i==P.i?'cur':i<save.d?'done':i>save.d?'lock':'';b.onclick=()=>{if(i<=save.d)arrive(i)};$('#map').appendChild(b)})}
+function checkpoint(){
+ if(!P.play||P.done)return;
+ save.current={i:P.i,step:P.step||0,t:P.t||0,hold:P.hold||0,en:P.en||0,jamLastType:P.jamLastType??null,score:P.score||0,combo:P.combo||0,miss:P.miss||0,perfect:P.perfect||0,choice:P.choice,choiceBonus:P.choiceBonus||0,choiceText:P.choiceText||'',ty:P.ty};sv();
+}
+function startChallenge(){
+ const l=LV[P.i];P.play=1;init();backing(1);msg(l.g+' · acompanhe o ritmo e controle o fole');checkpoint();
+}
+function storyScene(i,j){
+ const l=LV[i],s=l.scenes[j];
+ const choices=[
+  ['Ouvir com atenção','A escuta cuidadosa ajuda Sivuca a perceber nuances, ritmos e possibilidades de arranjo.'],
+  ['Experimentar um caminho próprio','A curiosidade e a prática ajudam Sivuca a descobrir novas soluções musicais.']
+ ];
+ const choiceButtons=choices.map((c,k)=>`<button class="go choice" data-choice="${k}">${c[0]}</button>`).join('');
+ ui.innerHTML=`<div class=card><em>CAPÍTULO ${i+1} DE ${LV.length} · CENA ${j+1} DE ${l.scenes.length}</em><h2>${s[0]}</h2><p>${s[1]}</p><p><b>${s[2]}:</b> ${s[3]}</p>${j===0?'<p>Como você quer acompanhar este momento?</p>'+choiceButtons:''}<button class=go id=next>${j===l.scenes.length-1?'Começar desafio musical':'Continuar história'}</button></div>`;
+ ui.style.display='flex';
+ ui.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{P.choice=+b.dataset.choice;P.choiceText=choices[P.choice][1];b.parentElement.querySelectorAll('[data-choice]').forEach(x=>{x.classList.toggle('selected',x===b);x.style.opacity=x===b?'1':'.55'});});
+ $('#next').onclick=()=>{if(j===0&&P.choice===null){msg('Escolha como você quer acompanhar este capítulo.');return;}if(j<l.scenes.length-1)storyScene(i,j+1);else{ui.style.display='none';P.choiceBonus=P.choice===0?50:100;P.choiceNote=P.choiceText;startChallenge();}};
+}
+function arrive(i){
+ P={i,step:0,t:0,hold:0,en:0,last:null,jamLastType:null,bl:null,done:0,play:0,ty:LV[i].ty,score:0,choice:null,combo:0,miss:0,perfect:0};
+ const l=LV[i];backing(0);chips();flash();msg(l.g);refreshHud();storyScene(i,0);
+}
+function showAbout(){
+ const facts=[
+  ['Nascimento','26 de maio de 1930 · Itabaiana, Paraíba'],
+  ['Primeira sanfona','13 de junho de 1939 · uma sanfona de dois baixos que chegou para seu irmão'],
+  ['Aprendizado','Autodidata na infância; estudou harmonia e orquestração com Guerra-Peixe'],
+  ['Mundo','Recife, Rio de Janeiro, Lisboa, Paris e Nova York fizeram parte de sua trajetória'],
+  ['Obra','Acordeonista, compositor, arranjador, maestro e multi-instrumentista'],
+  ['Último capítulo','Faleceu em João Pessoa, em 14 de dezembro de 2006']
+ ];
+ card(`<div class=eyebrow>O PROTAGONISTA</div><h2>Mestre Sivuca</h2><p>Severino Dias de Oliveira foi um músico paraibano cuja obra aproximou a música nordestina de muitos outros estilos e públicos. A sanfona foi seu instrumento mais conhecido, mas sua atuação também passou por arranjos, composição, piano, violão e orquestração.</p>${facts.map(f=>`<div class=fact><b>${f[0]}</b><br>${f[1]}</div>`).join('')}<p class=f>Texto biográfico baseado em registros da Fundação Joaquim Nabuco, UFPB e acervos musicais. As falas dramatizadas do jogo não são citações reais.</p>`,'Voltar',()=>{});
+}
+function showJournal(){
+ const entries=LV.slice(0,save.d).map((l,i)=>`<p><b>${i+1}. ${l.c} · ${l.y}</b><br>${l.t}</p>`).join('');
+ card(`<h2>Diário da jornada</h2>${entries||'<p>Complete um capítulo para registrar sua jornada.</p>'}<p class=f>As cenas e falas são dramatizações ficcionais, não declarações reais de Sivuca. A biografia foi baseada em registros da Fundação Joaquim Nabuco, UFPB, Rádio MEC e acervos musicais.</p>`,'Fechar',()=>{});
+}
+function win(){if(P.done)return;P.done=1;backing(0);const i=P.i,l=LV[i];
+  const bonus=Math.max(0,Math.round((l.ty==='run'?Math.max(0,l.lim-P.t):0)*35));
+  P.score=(P.score||0)+bonus+(P.choiceBonus||0);
+  save.best=save.best||{};save.best[i]=Math.max(save.best[i]||0,P.score);if(!save.ach.includes(l.a))save.ach.push(l.a);save.d=Math.max(save.d,i+1);save.choices=save.choices||[];save.choices[i]=P.choiceText||'';save.current=null;sv();chips();refreshHud();
+setTimeout(()=>{if(i<LV.length-1)card(`<h2>Capítulo concluído!</h2><div class="statline"><div class="stat"><b>${P.score}</b><span>pontos</span></div><div class="stat"><b>${P.perfect||0}</b><span>notas certas</span></div><div class="stat"><b>🏅</b><span>${l.a}</span></div></div><p>${l.o}</p><p class=f>${P.choiceNote||''}</p>`,'Continuar para '+LV[i+1].c,()=>arrive(i+1));
+else card(`<h2>O legado continua</h2><p>Você acompanhou sete capítulos da vida de Mestre Sivuca: da primeira sanfona em Itabaiana às experiências internacionais, às parcerias e ao diálogo entre a música popular e a orquestra.</p><p>🏅 ${save.ach.join(' · ')}</p><p>“Feira de Mangaio”, criada com Glória Gadelha, e tantas outras obras continuam aproximando pessoas da música brasileira.</p><p class=f>As cenas e falas deste jogo são dramatizações ficcionais. Os acontecimentos biográficos seguem fontes históricas. A sanfona e as bases são sintetizadas e originais.</p>`,'Abrir diário',()=>{P.play=0;msg('Jornada concluída · Diário disponível');stageEl.textContent='JORNADA CONCLUÍDA';showJournal()})},700)}
+function logic(dt){if(!P.play||P.done)return;const l=LV[P.i];
+if(l.ty==='seq'||l.ty==='run'){
+ const n=l.s[P.step];if(P.bl&&!held[P.bl])P.bl=null;
+ if(n&&held[n]&&pr>.12&&P.bl!==n){
+  P.step++;P.bl=n;P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;checkpoint();
+  P.score+=100+Math.min(100,P.combo*8);refreshHud();
+  msg(P.combo>=5?'Excelente! Sequência em andamento.':'Boa nota! Continue acompanhando a melodia.');
+  if(l.ty==='run'&&!P.t)P.t=.001;
+  for(let k=0;k<5;k++)parts.push({x:60+Math.random()*50,y:145,vx:20+Math.random()*100,vy:-60-Math.random()*65,l:1});
+ }
+ if(l.ty==='run'&&P.t){P.t+=dt;if(P.t>l.lim){P.step=0;P.t=0;P.combo=0;P.bl=null;msg('O tempo acabou. Respire e tente a sequência novamente.');refreshHud();}}
+ if(P.step>=l.s.length)win();
+}
+else if(l.ty=='swell'){const ok=held[l.k]&&pr>l.lo&&pr<l.hi;P.hold=Math.max(0,P.hold+(ok?dt:-dt*.7));if(P.hold>=l.need){P.score=1000;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
+else if(l.ty==='jam'){if(P.en>=100){P.score=(P.score||0)+500;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
+else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
+function box(a,b,w,h){x.fillStyle='#2b1409';x.fillRect(a,b,w,h);x.strokeStyle='#f4b942';x.lineWidth=2;x.strokeRect(a+2,b+2,w-4,h-4);x.fillStyle='#fff3dc';for(let r=0;r<5;r++)for(let c=0;c<2;c++){x.beginPath();x.arc(a+14+c*18,b+14+r*18,5,0,7);x.fill()}}
+function sky(i){x.beginPath();x.moveTo(0,150);
+if(i==0){for(let k=0;k<=8;k++)x.lineTo(k*50,100+Math.sin(k*1.7)*22);x.lineTo(W,150);x.fill();[[40,118],[150,126],[300,112]].forEach(h=>x.fillRect(h[0],h[1],34,30))}
+else if(i==1){x.lineTo(0,150);x.fill();for(let k=0;k<5;k++){x.beginPath();x.arc(40+k*80,150,34,Math.PI,0);x.lineTo(74+k*80,150);x.fill()}x.fillRect(0,112,W,10)}
+else if(i==2){x.lineTo(40,150);x.bezierCurveTo(60,60,150,60,180,150);x.lineTo(210,150);x.bezierCurveTo(240,30,300,30,330,150);x.fill()}
+else if(i==3){x.lineTo(0,150);x.fill();x.beginPath();x.moveTo(150,150);x.lineTo(190,30);x.lineTo(200,30);x.lineTo(240,150);x.lineTo(214,150);x.lineTo(195,80);x.lineTo(176,150);x.fill();x.fillRect(165,88,60,6)}
+else{x.lineTo(0,150);x.fill();[[10,90],[60,60],[110,100],[170,40],[230,80],[290,55],[345,95]].forEach(b=>x.fillRect(b[0],b[1],40,150-b[1]))}}
+function draw(dt){const i=P.i||0,l=LV[i],c=l.col,g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
+x.fillStyle='rgba(255,230,160,.9)';x.beginPath();x.arc(340,64+Math.sin(gt)*3,24,0,7);x.fill();x.fillStyle='rgba(0,0,0,.28)';sky(i);
+const L=110+bx*170,xl=14,xr=xl+46+L,y0=118,h=100;box(xl,y0,46,h);
+for(let k=0;k<16;k++){const a=xl+46+L/16*k,b=a+L/16,o=k%2?4:0;x.fillStyle=k%2?'#b23a2c':'#7d2318';x.beginPath();x.moveTo(a,y0+o);x.lineTo(b,y0+4-o);x.lineTo(b,y0+h-4+o);x.lineTo(a,y0+h-o);x.fill()}
+box(xr,y0,46,h);
+x.fillStyle='rgba(0,0,0,.4)';x.fillRect(20,232,360,8);x.fillStyle=pr>.12?'#ffd45e':'#8a6d3b';x.fillRect(20,232,360*pr,8);
+if(l.ty=='swell'){x.fillStyle='rgba(60,220,120,.45)';x.fillRect(20+360*l.lo,228,360*(l.hi-l.lo),16)}
+x.font='600 13px Fraunces,Georgia,serif';x.fillStyle='#fff3dc';x.textAlign='left';x.fillText(l.c+' · '+l.y,12,20);x.fillText('FOLE · AR '+Math.round(pr*100)+'%',20,226);
+if(P.play&&!P.done){const r=l.s?P.step/l.s.length:l.ty=='swell'?P.hold/l.need:P.en/100;x.fillStyle='rgba(0,0,0,.4)';x.fillRect(12,30,200,8);x.fillStyle='#2a9d8f';x.fillRect(12,30,200*Math.min(1,r),8);if(P.t){x.fillStyle='#ffe08a';x.fillText(Math.max(0,l.lim-P.t).toFixed(1)+'s',220,38)}}
+if(Object.keys(held).length&&pr>.1&&Math.random()<.5)parts.push({x:xr+20+Math.random()*20,y:y0+10,vx:20+Math.random()*60,vy:-40-Math.random()*50,l:1});
+parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;x.globalAlpha=Math.max(0,p.l);x.fillStyle='#ffe08a';x.font='18px serif';x.fillText('♪',p.x,p.y)});x.globalAlpha=1;parts=parts.filter(p=>p.l>0);
+if(P.play&&!P.done&&Object.keys(held).length&&Math.random()<.12)parts.push({x:210+Math.random()*130,y:90+Math.random()*60,vx:-18+Math.random()*36,vy:-45-Math.random()*30,l:.8});
+const nx=P.play&&!P.done?(l.s?l.s[P.step]:l.k):null;document.querySelectorAll('.k,.b').forEach(b=>b.classList.toggle('nx',b.id==nx))}
+let lt=0;function loop(t){const dt=Math.min(.05,(t-(lt||t))/1e3);lt=t;gt+=dt;
+if(keys.arrowleft)bt=Math.max(0,bt-1.4*dt);if(keys.arrowright)bt=Math.min(1,bt+1.4*dt);
+bx+=(bt-bx)*Math.min(1,dt*12);const v=Math.abs(bx-pb)/Math.max(dt,.001);pb=bx;const target=drag?Math.min(1,.16+v*.24):Math.max(0,pr-dt*.22);pr+=(target-pr)*Math.min(1,dt*8);
+if(pressureGain)pressureGain.gain.setTargetAtTime(Math.min(1,pr*1.25),ac.currentTime,.035);logic(dt);draw(dt);requestAnimationFrame(loop)}
+chips();$('#journal').onclick=showJournal;$('#about').onclick=showAbout;
+ $('#vol').oninput=e=>{volume=Number(e.target.value)/100;if(master)master.gain.setTargetAtTime(volume,ac.currentTime,.04);};
+ $('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'Ativar som':'Silenciar';if(master)master.gain.setTargetAtTime(muted?0:volume,ac.currentTime,.04);};
+ msg('Arraste o fole para controlar o ar · toque nas teclas para tocar');requestAnimationFrame(loop);
+ui.style.display='flex';ui.innerHTML=`<div class=card style="border:0;background:none"><h1>FOLE</h1><h2>A jornada de Mestre Sivuca</h2><p>Você acompanha <b>Mestre Sivuca</b> desde a infância em Itabaiana até sua consagração como músico de alcance internacional. Cada capítulo revela um momento real de sua trajetória e propõe um desafio musical inspirado nele.</p><button class=go id=n>Começar</button>${(save.current||(save.d>0&&save.d<LV.length))?'<button class=go id=cn>Continuar jornada</button>':''}<p class=f>Como jogar: arraste o fole para controlar o ar e toque nas teclas e nos baixos. As notas iluminadas indicam a sequência. O progresso do desafio é salvo automaticamente.</p><p class=f>As cenas e diálogos são dramatizações; não são falas reais de Sivuca ou de pessoas próximas. As escolhas mudam apenas a experiência do jogador, não os fatos históricos.</p></div>`;
+$('#n').onclick=()=>{save.current=null;sv();ui.style.display='none';init();arrive(0)};if($('#cn'))$('#cn').onclick=()=>{ui.style.display='none';init();if(save.current){const q=save.current;P={i:q.i,step:q.step,t:q.t,hold:q.hold,en:q.en,jamLastType:q.jamLastType??null,last:null,bl:null,done:0,play:1,ty:q.ty,score:q.score,choice:q.choice,choiceBonus:q.choiceBonus,choiceText:q.choiceText,combo:q.combo,miss:q.miss,perfect:q.perfect};chips();refreshHud();backing(1);msg('Desafio retomado do último ponto salvo.');}else arrive(Math.min(save.d,LV.length-1));};
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('visibilitychange',()=>{if(document.hidden){Object.keys(held).forEach(up);backing(0);checkpoint()}else if(P.play&&!P.done){init();backing(1)}});
+</script></body></html>
