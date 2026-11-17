@@ -1,0 +1,68 @@
+name: Validate and publish FOLE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate game
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check embedded JavaScript and HTML structure
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script\\b[^>]*>(.*?)</script>", html, flags=re.S | re.I)
+          assert len(scripts) == 1, f"Expected one inline script, found {len(scripts)}"
+          Path("/tmp/fole-inline.js").write_text(scripts[0], encoding="utf-8")
+          ids = re.findall(r"\\bid=[\\\"']([^\\\"']+)", html)
+          duplicates = sorted({item for item in ids if ids.count(item) > 1})
+          assert not duplicates, f"Duplicate HTML IDs: {duplicates}"
+          assert "P.jamLastType" in html, "Alternating improvisation state missing"
+          assert "P.en=Math.max(0,P.en-dt*2.5)" not in html, "Improvisation progress decay returned"
+          assert "Improviso: alterne melodia e baixos até completar 100%" in html
+          print(f"HTML checks passed: {len(ids)} unique IDs; inline JS extracted.")
+          PY
+          node --check /tmp/fole-inline.js
+      - name: Check repository entry point
+        run: test -s index.html
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
