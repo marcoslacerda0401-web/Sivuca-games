@@ -40,12 +40,12 @@ jobs:
           assert not duplicates, f"Duplicate HTML IDs: {duplicates}"
           assert "P.jamLastType" in html, "Alternating improvisation state missing"
           assert "P.en=Math.max(0,P.en-dt*2.5)" not in html, "Improvisation progress decay returned"
-          assert "Improviso: alterne melodia e baixos até completar 100%" in html
+          assert html.count("Improviso: alterne melodia e baixos até completar 100%") >= 2, "Both improvisation chapters need clear instructions"
           print(f"HTML checks passed: {len(ids)} unique IDs; inline JS extracted.")
           PY
           node --check /tmp/fole-inline.js
       - name: Check repository entry point
-        run: test -s index.html
+        run: test -s index.html && test -s favicon.svg
 
   deploy:
     name: Deploy to GitHub Pages
