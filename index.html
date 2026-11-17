@@ -82,6 +82,17 @@ em{color:#d9c1e8;font-style:normal;font-size:12px}
 .card .choice.selected{outline:2px solid #ffe08a;filter:brightness(1.12)}
 #msg strong{color:var(--sun)}
 #fl{position:absolute;inset:0;z-index:4;background:#fff3dc;opacity:0;pointer-events:none}
+#travel{display:none;position:absolute;inset:0;z-index:7;overflow:hidden;background:linear-gradient(180deg,#1b1740,#79577e 55%,#e99a67);align-items:center;justify-content:center;text-align:center}
+#travel.show{display:flex;animation:travelFade .3s ease}
+.travel-copy{position:relative;z-index:2;padding:24px;text-shadow:0 3px 18px #130d2c}
+.travel-copy small{color:#ffe4a3;letter-spacing:3px;font-weight:800}
+.travel-copy h2{font:900 clamp(26px,6vw,48px) Fraunces,Georgia,serif;color:#fff2d4;margin:12px 0}
+.travel-route{height:2px;width:min(70vw,460px);margin:28px auto;background:linear-gradient(90deg,transparent,#ffe3a1,transparent);position:relative}
+.travel-plane{position:absolute;left:0;top:-25px;font-size:36px;filter:drop-shadow(0 5px 10px #17102a);animation:flyAcross 2.2s cubic-bezier(.2,.7,.2,1) forwards}
+.travel-cloud{position:absolute;color:#fff2df88;font-size:54px;animation:cloudDrift 7s linear infinite}
+@keyframes flyAcross{0%{left:0;transform:translateY(18px) rotate(-8deg)}50%{transform:translateY(-28px) rotate(3deg)}100%{left:calc(100% - 38px);transform:translateY(-4px) rotate(8deg)}}
+@keyframes cloudDrift{from{translate:110vw 0}to{translate:-30vw 0}}
+@keyframes travelFade{from{opacity:0}to{opacity:1}}
 @keyframes fl{0%{opacity:.9}100%{opacity:0}}
 @media(max-height:680px){
   #map{padding:6px}#map button{padding:6px 1px;font-size:9px}
@@ -97,7 +108,7 @@ em{color:#d9c1e8;font-style:normal;font-size:12px}
 }
 </style>
 <meta name="theme-color" content="#100d20"><meta name="description" content="Uma aventura musical e biográfica sobre Mestre Sivuca, músico paraibano."><meta property="og:type" content="website"><meta property="og:title" content="FOLE — A Jornada de Mestre Sivuca"><meta property="og:description" content="Uma aventura musical e biográfica pela trajetória de Mestre Sivuca."><meta name="color-scheme" content="dark"><link rel="icon" type="image/svg+xml" href="./favicon.svg">
-</head><body><div id="a"><div id="map" role="navigation" aria-label="Capítulos da jornada"></div><div id="tools"><button id="journal" type="button">📖 Diário</button><button id="about" type="button">✦ Sobre Sivuca</button></div><div id="hud"><span class="tag" id="stage">JORNADA MUSICAL</span><span>⭐ <strong id="score">0</strong></span><span class="tag" id="best">Recorde: —</span></div><canvas id="c" width="400" height="250" role="img" aria-label="Ilustração da sanfona e indicador de pressão do fole"></canvas><div id="msg" role="status" aria-live="polite" aria-atomic="true"></div><div id="soundbar"><span>🔊 Som</span><input id="vol" type="range" min="0" max="100" value="72" aria-label="Volume do jogo"><button id="mute" type="button">Silenciar</button><span id="combo">Combo ×0</span></div><div id="kb" role="group" aria-label="Teclado musical: botões vermelhos para baixos e teclas claras para melodia"><div id="bs"></div><div id="ks"></div></div><div id="fl"></div><div id="ui"></div></div>
+</head><body><div id="a"><div id="map" role="navigation" aria-label="Capítulos da jornada"></div><div id="tools"><button id="journal" type="button">📖 Diário</button><button id="about" type="button">✦ Sobre Sivuca</button></div><div id="hud"><span class="tag" id="stage">JORNADA MUSICAL</span><span>⭐ <strong id="score">0</strong></span><span class="tag" id="best">Recorde: —</span></div><canvas id="c" width="400" height="250" role="img" aria-label="Ilustração da sanfona e indicador de pressão do fole"></canvas><div id="msg" role="status" aria-live="polite" aria-atomic="true"></div><div id="soundbar"><span>🔊 Som</span><input id="vol" type="range" min="0" max="100" value="72" aria-label="Volume do jogo"><button id="mute" type="button">Silenciar</button><span id="combo">Combo ×0</span></div><div id="kb" role="group" aria-label="Teclado musical: botões vermelhos para baixos e teclas claras para melodia"><div id="bs"></div><div id="ks"></div></div><div id="fl"></div><div id="travel" aria-live="polite"></div><div id="ui"></div></div>
 <script>
 const $=s=>document.querySelector(s),cv=$('#c'),x=cv.getContext('2d'),W=400,H=250,ui=$('#ui');
 let ac,mg,bk,save={d:0,ach:[],best:{},choices:[]};
@@ -217,6 +228,7 @@ function backing(on){
   step++;
  },beat);
 }
+function rhythmGrade(){const beat=60/104,phase=((gt%beat)+beat)%beat,dist=Math.min(phase,beat-phase);return dist<.105?'PERFEITO':dist<.21?'BOM':'FORA DO TEMPO'}
 function down(id){
  init();if(held[id])return;
  const b=id[0]==='k',n=+id.slice(1);
@@ -241,7 +253,7 @@ function down(id){
  }
  if((P.ty==='seq'||P.ty==='run')&&P.play&&!P.done){
   const expected=LV[P.i].s[P.step];
-  if(id===expected){P.lastHit=id;}
+  if(id===expected){P.lastHit=id;P.hitGrade=rhythmGrade();}
   else if(id!==P.lastWrong){P.combo=0;P.miss=(P.miss||0)+1;P.lastWrong=id;msg('Ouça a frase e tente a próxima nota.');refreshHud();}
  }
 }
@@ -275,6 +287,7 @@ function storyScene(i,j){
  ui.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{P.choice=+b.dataset.choice;P.choiceText=choices[P.choice][1];b.parentElement.querySelectorAll('[data-choice]').forEach(x=>{x.classList.toggle('selected',x===b);x.style.opacity=x===b?'1':'.55'});});
  $('#next').onclick=()=>{if(j===0&&P.choice===null){msg('Escolha como você quer acompanhar este capítulo.');return;}if(j<l.scenes.length-1)storyScene(i,j+1);else{ui.style.display='none';P.choiceBonus=P.choice===0?50:100;P.choiceNote=P.choiceText;startChallenge();}};
 }
+function travelTo(i){const el=$('#travel'),from=LV[P.i].c,to=LV[i].c;el.innerHTML='<span class="travel-cloud" style="top:18%;left:8%">☁</span><span class="travel-cloud" style="top:35%;left:65%;animation-delay:-3s">☁</span><div class="travel-copy"><small>PRÓXIMA PARADA</small><h2>'+from+' → '+to+'</h2><p>Uma nova etapa da jornada musical de Sivuca</p><div class="travel-route"><span class="travel-plane">✈</span></div><small>PREPARE-SE PARA O PRÓXIMO RITMO</small></div>';el.classList.add('show');setTimeout(()=>{el.classList.remove('show');el.innerHTML='';arrive(i)},2350)}
 function arrive(i){
  P={i,step:0,t:0,hold:0,en:0,last:null,jamLastType:null,bl:null,done:0,play:0,ty:LV[i].ty,score:0,choice:null,combo:0,miss:0,perfect:0};
  const l=LV[i];backing(0);chips();flash();msg(l.g);refreshHud();storyScene(i,0);
@@ -298,15 +311,15 @@ function win(){if(P.done)return;P.done=1;backing(0);const i=P.i,l=LV[i];
   const bonus=Math.max(0,Math.round((l.ty==='run'?Math.max(0,l.lim-P.t):0)*35));
   P.score=(P.score||0)+bonus+(P.choiceBonus||0);
   save.best=save.best||{};save.best[i]=Math.max(save.best[i]||0,P.score);if(!save.ach.includes(l.a))save.ach.push(l.a);save.d=Math.max(save.d,i+1);save.choices=save.choices||[];save.choices[i]=P.choiceText||'';save.current=null;sv();chips();refreshHud();
-setTimeout(()=>{if(i<LV.length-1)card(`<h2>Capítulo concluído!</h2><div class="statline"><div class="stat"><b>${P.score}</b><span>pontos</span></div><div class="stat"><b>${P.perfect||0}</b><span>notas certas</span></div><div class="stat"><b>🏅</b><span>${l.a}</span></div></div><p>${l.o}</p><p class=f>${P.choiceNote||''}</p>`,'Continuar para '+LV[i+1].c,()=>arrive(i+1));
+setTimeout(()=>{if(i<LV.length-1)card(`<h2>Capítulo concluído!</h2><div class="statline"><div class="stat"><b>${P.score}</b><span>pontos</span></div><div class="stat"><b>${P.perfect||0}</b><span>notas certas</span></div><div class="stat"><b>🏅</b><span>${l.a}</span></div></div><p>${l.o}</p><p class=f>${P.choiceNote||''}</p>`,'Embarcar para '+LV[i+1].c,()=>travelTo(i+1));
 else card(`<h2>O legado continua</h2><p>Você acompanhou sete capítulos da vida de Mestre Sivuca: da primeira sanfona em Itabaiana às experiências internacionais, às parcerias e ao diálogo entre a música popular e a orquestra.</p><p>🏅 ${save.ach.join(' · ')}</p><p>“Feira de Mangaio”, criada com Glória Gadelha, e tantas outras obras continuam aproximando pessoas da música brasileira.</p><p class=f>As cenas e falas deste jogo são dramatizações ficcionais. Os acontecimentos biográficos seguem fontes históricas. A sanfona e as bases são sintetizadas e originais.</p>`,'Abrir diário',()=>{P.play=0;msg('Jornada concluída · Diário disponível');stageEl.textContent='JORNADA CONCLUÍDA';showJournal()})},700)}
 function logic(dt){if(!P.play||P.done)return;const l=LV[P.i];
 if(l.ty==='seq'||l.ty==='run'){
  const n=l.s[P.step];if(P.bl&&!held[P.bl])P.bl=null;
  if(n&&held[n]&&pr>.12&&P.bl!==n){
-  P.step++;P.bl=n;P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;checkpoint();
-  P.score+=100+Math.min(100,P.combo*8);refreshHud();
-  msg(P.combo>=5?'Excelente! Sequência em andamento.':'Boa nota! Continue acompanhando a melodia.');
+  P.step++;P.bl=n;const grade=P.hitGrade||'BOM';P.hitGrade=null;if(grade==='FORA DO TEMPO')P.combo=0;else{P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;}checkpoint();
+  P.score+=grade==='PERFEITO'?160:grade==='BOM'?100:35;refreshHud();
+  msg(grade==='PERFEITO'?'PERFEITO! No tempo certo.':grade==='BOM'?'Muito bem! Boa batida.':'Nota certa! Tente encaixar no pulso para ganhar mais pontos.');
   if(l.ty==='run'&&!P.t)P.t=.001;
   for(let k=0;k<5;k++)parts.push({x:60+Math.random()*50,y:145,vx:20+Math.random()*100,vy:-60-Math.random()*65,l:1});
  }
@@ -331,7 +344,7 @@ box(xr,y0,46,h);
 x.fillStyle='rgba(0,0,0,.4)';x.fillRect(20,232,360,8);x.fillStyle=pr>.12?'#ffd45e':'#8a6d3b';x.fillRect(20,232,360*pr,8);
 if(l.ty=='swell'){x.fillStyle='rgba(60,220,120,.45)';x.fillRect(20+360*l.lo,228,360*(l.hi-l.lo),16)}
 x.font='600 13px Fraunces,Georgia,serif';x.fillStyle='#fff3dc';x.textAlign='left';x.fillText(l.c+' · '+l.y,12,20);x.fillText('FOLE · AR '+Math.round(pr*100)+'%',20,226);
-if(P.play&&!P.done){const r=l.s?P.step/l.s.length:l.ty=='swell'?P.hold/l.need:P.en/100;x.fillStyle='rgba(0,0,0,.4)';x.fillRect(12,30,200,8);x.fillStyle='#2a9d8f';x.fillRect(12,30,200*Math.min(1,r),8);if(P.t){x.fillStyle='#ffe08a';x.fillText(Math.max(0,l.lim-P.t).toFixed(1)+'s',220,38)}}
+if(P.play&&!P.done){const r=l.s?P.step/l.s.length:l.ty=='swell'?P.hold/l.need:P.en/100;x.fillStyle='rgba(0,0,0,.4)';x.fillRect(12,30,200,8);x.fillStyle='#2a9d8f';x.fillRect(12,30,200*Math.min(1,r),8);if(P.t){x.fillStyle='#ffe08a';x.fillText(Math.max(0,l.lim-P.t).toFixed(1)+'s',220,38)}if(l.ty==='seq'||l.ty==='run'){const beat=60/104,phase=(gt%beat)/beat;x.font='800 8px system-ui';x.fillStyle='#ffe6a9';x.fillText('RITMO',254,24);for(let z=0;z<4;z++){x.fillStyle=z===P.step%4?'#ffcf63':'#fff0c4';x.beginPath();x.arc(260+z*35,43,5,0,Math.PI*2);x.fill()}x.fillStyle='#ffcf63';x.beginPath();x.arc(260+phase*105,56,3,0,Math.PI*2);x.fill()}}
 if(Object.keys(held).length&&pr>.1&&Math.random()<.5)parts.push({x:xr+20+Math.random()*20,y:y0+10,vx:20+Math.random()*60,vy:-40-Math.random()*50,l:1});
 parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;x.globalAlpha=Math.max(0,p.l);x.fillStyle='#ffe08a';x.font='18px serif';x.fillText('♪',p.x,p.y)});x.globalAlpha=1;parts=parts.filter(p=>p.l>0);
 if(P.play&&!P.done&&Object.keys(held).length&&Math.random()<.12)parts.push({x:210+Math.random()*130,y:90+Math.random()*60,vx:-18+Math.random()*36,vy:-45-Math.random()*30,l:.8});
