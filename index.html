@@ -476,7 +476,7 @@ function retryChallenge(){
 }
 function win(){if(P.done)return;const i=P.i,l=LV[i],required=minimumScore(l),earned=P.score||0;
  if(earned<required){
-  P.done=1;P.play=0;$('#pause').disabled=true;backing(0);checkpoint();
+  P.done=1;P.play=0;$('#pause').disabled=true;backing(0);save.current=null;sv();
   card(`<div class=eyebrow>DESAFIO NÃO CONCLUÍDO</div><h2>Quase lá!</h2><p>Você terminou a execução, mas ainda precisa alcançar a pontuação mínima para seguir para a próxima cidade.</p><div class=pass-panel><div><b>${earned}</b><small>SUA PONTUAÇÃO</small></div><div><b>${required}</b><small>MÍNIMO</small></div><div><b>${Math.max(0,required-earned)}</b><small>FALTARAM</small></div></div><div class=retry-note>Experimente acertar mais notas no tempo certo e manter seu combo. A fase não será liberada até atingir a meta.</div>`,'Tentar novamente',retryChallenge);
   return;
  }
@@ -501,9 +501,9 @@ else if(l.ty=='swell'){const ok=held[l.k]&&pr>l.lo&&pr<l.hi;P.hold=Math.max(0,P.
 else if(l.ty==='jam'){if(P.en>=100){P.score=(P.score||0)+500;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 
-function rhythmLane(id){return id[0]==='k'?Math.floor(+id.slice(1)/2):2+(+id.slice(1)%2)}
+function rhythmLane(id){return id[0]==='k'?Math.floor(+id.slice(1)/2):4+Math.floor(+id.slice(1)/2)}
 function drawRhythmStage(l){
- const names=['MELODIA 1','MELODIA 2','BAIXO 1','BAIXO 2'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4'],left=28,lw=86,top=48,bottom=211,hit=183,beat=.72,start=P.rhythmStart||gt+2.2,seq=l.s||[];
+ const names=['MEL 1 · A/S','MEL 2 · D/F','MEL 3 · G/H','MEL 4 · J/K','BAIXO · Z/X','BAIXO · C/V'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4','#e6a36f','#8db6ef'],left=16,lw=61,top=53,bottom=211,hit=183,beat=.72,start=P.rhythmStart||gt+2.2,seq=l.s||[];
  // Cada cidade recebe uma silhueta própria, com luzes de palco.
  x.fillStyle='#080e1b';x.fillRect(0,0,W,H);
  const skylines=[
@@ -520,10 +520,10 @@ function drawRhythmStage(l){
  const glow=x.createRadialGradient(200,110,4,200,110,210);glow.addColorStop(0,l.col[0]+'66');glow.addColorStop(1,'#080e1b00');x.fillStyle=glow;x.fillRect(0,25,W,205);
  x.font='700 10px system-ui';x.textAlign='left';x.fillStyle='#f8e6c8';x.fillText(l.c.toUpperCase()+'  /  DESAFIO DE RITMO',14,17);
  x.textAlign='right';x.fillStyle='#f6cf7d';x.fillText('NOTA '+Math.min(P.step+1,seq.length)+' / '+seq.length,386,17);
- for(let lane=0;lane<4;lane++){
-  const xx=left+lane*lw;x.fillStyle='#ffffff0b';x.fillRect(xx,top,lw-5,bottom-top);
-  x.fillStyle=colors[lane];x.globalAlpha=.9;x.fillRect(xx,top,2,bottom-top);x.globalAlpha=1;
-  x.font='700 7px system-ui';x.textAlign='center';x.fillStyle=colors[lane];x.fillText(names[lane],xx+(lw-5)/2,top-7);
+ for(let lane=0;lane<6;lane++){
+  const xx=left+lane*lw,activeLane=seq[P.step]&&rhythmLane(seq[P.step])===lane;x.fillStyle=activeLane?'#ffffff18':'#ffffff0b';x.fillRect(xx,top,lw-5,bottom-top);
+  x.fillStyle=colors[lane];x.globalAlpha=activeLane?1:.65;x.fillRect(xx,top,activeLane?3:2,bottom-top);x.globalAlpha=1;
+  x.font='700 6px system-ui';x.textAlign='center';x.fillStyle=colors[lane];x.fillText(names[lane],xx+(lw-5)/2,top-7);
   x.strokeStyle='#ffffff18';x.lineWidth=1;x.beginPath();x.moveTo(xx,hit);x.lineTo(xx+lw-5,hit);x.stroke();
  }
  // approaching notes: current and next four events, travelling towards the hit line
@@ -536,15 +536,15 @@ function drawRhythmStage(l){
   x.fillStyle='#101522';x.font='900 12px system-ui';x.textAlign='center';x.fillText(seq[j][0]==='k'?KL[+seq[j].slice(1)].toUpperCase():BL[+seq[j].slice(1)].toUpperCase(),xx+15,yy+4);
  }
  // zona de precisão e linha de execução
- x.fillStyle='#ffffff12';x.fillRect(20,hit-5,360,10);
- x.fillStyle='#fff0c9';x.globalAlpha=.9;x.fillRect(20,hit,360,2);x.globalAlpha=1;
- x.fillStyle='#ffe2a0';x.font='800 8px system-ui';x.textAlign='left';x.fillText('TOQUE AQUI',22,hit+17);
+ x.fillStyle='#ffffff12';x.fillRect(14,hit-5,372,10);
+ x.fillStyle='#fff0c9';x.globalAlpha=.9;x.fillRect(14,hit,372,2);x.globalAlpha=1;
+ x.fillStyle='#ffe2a0';x.font='800 8px system-ui';x.textAlign='left';x.fillText('TOQUE NA LINHA · TECLAS INDICADAS EM CADA PISTA',15,hit+17);
  if(P.judgement&&gt-(P.judgementAt||0)<.85){
   const fade=1-(gt-(P.judgementAt||0))/.85;x.save();x.globalAlpha=Math.max(0,fade);x.textAlign='center';x.font='900 17px system-ui';x.fillStyle=P.judgementColor||'#fff0c9';x.shadowColor=P.judgementColor||'#fff0c9';x.shadowBlur=16;x.fillText(P.judgement,200,76-Math.max(0,gt-(P.judgementAt||0))*13);x.restore();
  }
  // live timing pulse
  const beatPhase=((gt-start)%beat+beat)%beat;
- x.fillStyle='#ffffff20';x.fillRect(20,228,360,5);x.fillStyle='#f6ce7a';x.fillRect(20,228,360*(beatPhase/beat),5);
+ x.fillStyle='#ffffff20';x.fillRect(14,228,372,5);x.fillStyle='#f6ce7a';x.fillRect(14,228,372*(beatPhase/beat),5);
  x.textAlign='right';x.fillStyle='#f5dcae';x.font='700 8px system-ui';x.fillText('COMBO ×'+(P.combo||0),378,17);
   x.textAlign='left';x.fillStyle='#c9d8ec';x.font='700 8px system-ui';x.fillText('ACERTOS '+(P.hits||0)+'  ·  ERROS '+(P.miss||0),14,242);
 }
