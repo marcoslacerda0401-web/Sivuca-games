@@ -370,13 +370,14 @@ function down(id){
  if((P.ty==='seq'||P.ty==='run')&&P.play&&!P.done){
   const sequence=LV[P.i].s||[],expected=sequence[P.step],correct=id===expected;
   if(sequence.length&&expected){
-   const grade=rhythmGrade(),lane=id[0]==='k'?Math.floor(+id.slice(1)/2):2+(+id.slice(1)%2),expectedLane=expected[0]==='k'?Math.floor(+expected.slice(1)/2):2+(+expected.slice(1)%2),laneCorrect=lane===expectedLane;P.lastHit=id;P.step++;
+   const grade=rhythmGrade(),lane=id[0]==='k'?Math.floor(+id.slice(1)/2):2+(+id.slice(1)%2),expectedLane=expected[0]==='k'?Math.floor(+expected.slice(1)/2):2+(+expected.slice(1)%2),laneCorrect=lane===expectedLane;P.lastHit=id;P.step++;P.judgementAt=gt;
    if(correct&&laneCorrect){
+    P.judgement=grade==='PERFEITO'?'PERFEITO':grade==='BOM'?'MUITO BOM':'NO TEMPO';P.judgementColor=grade==='PERFEITO'?'#ffe08a':'#a6e7d2';
     if(grade==='FORA DO TEMPO')P.combo=0;else{P.combo=(P.combo||0)+1;P.perfect=(P.perfect||0)+1;}
     P.score=(P.score||0)+(grade==='PERFEITO'?160:grade==='BOM'?100:35);
     msg(grade==='PERFEITO'?'PERFEITO! No tempo certo.':grade==='BOM'?'MUITO BOM! Boa batida.':'Nota certa! Continue a sequência.');
    }else{
-    P.combo=0;P.miss=(P.miss||0)+1;P.score=(P.score||0)+15;
+    P.judgement='TENTE NOVAMENTE';P.judgementColor='#ff9c88';P.combo=0;P.miss=(P.miss||0)+1;P.score=(P.score||0)+15;
     const next=sequence[P.step]||'',label=next?(next[0]==='k'?KL[+next.slice(1)]:BL[+next.slice(1)]):'final';
     msg((!laneCorrect?'Pista errada. ':'Nota fora da sequência, mas seguimos! ')+'Próxima nota: '+label+'.');
    }
@@ -454,9 +455,19 @@ else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 function rhythmLane(id){return id[0]==='k'?Math.floor(+id.slice(1)/2):2+(+id.slice(1)%2)}
 function drawRhythmStage(l){
  const names=['MELODIA 1','MELODIA 2','BAIXO 1','BAIXO 2'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4'],left=28,lw=86,top=48,bottom=211,hit=183,beat=.72,start=P.rhythmStart||gt+2.2,seq=l.s||[];
- // skyline and stage glow
+ // Cada cidade recebe uma silhueta própria, com luzes de palco.
  x.fillStyle='#080e1b';x.fillRect(0,0,W,H);
- for(let i=0;i<16;i++){const xx=i*27;x.fillStyle=i%2?'#17263a':'#1d2940';x.fillRect(xx,95+(i*17%48),19,125)}
+ const skylines=[
+  [[0,132,42,76],[48,112,35,96],[91,142,48,66],[150,100,36,108],[196,126,42,82],[247,108,48,100],[305,137,38,71],[352,116,48,92]],
+  [[0,130,62,78],[65,112,54,96],[124,137,64,71],[196,110,56,98],[255,128,64,80],[326,108,74,100]],
+  [[0,140,52,68],[58,120,44,88],[112,134,58,74],[180,105,48,103],[235,130,54,78],[298,111,48,97],[354,138,46,70]],
+  [[0,126,48,82],[54,112,36,96],[100,138,55,70],[164,118,43,90],[215,102,58,106],[282,128,52,80],[344,110,56,98]],
+  [[0,135,44,73],[52,105,35,103],[96,126,52,82],[158,91,43,117],[211,119,55,89],[276,99,48,109],[334,125,66,83]],
+  [[0,133,48,75],[56,114,44,94],[111,138,50,70],[170,107,42,101],[220,125,52,83],[282,105,50,103],[342,130,58,78]],
+  [[0,128,52,80],[62,108,42,100],[114,135,48,73],[174,113,50,95],[235,132,45,76],[292,104,52,104],[354,126,46,82]]
+ ];
+ (skylines[P.i]||skylines[0]).forEach((b,i)=>{x.fillStyle=i%2?'#17283a':'#203148';x.fillRect(b[0],b[1],b[2],b[3]);for(let wx=b[0]+7;wx<b[0]+b[2]-4;wx+=12)for(let wy=b[1]+10;wy<Math.min(205,b[1]+b[3]-8);wy+=17){x.fillStyle=Math.floor(wx+wy+gt*2)%5===0?'#f6cf7d66':'#f6cf7d16';x.fillRect(wx,wy,3,5)}});
+ x.fillStyle='#ffffff0b';x.fillRect(0,205,W,45);
  const glow=x.createRadialGradient(200,110,4,200,110,210);glow.addColorStop(0,l.col[0]+'66');glow.addColorStop(1,'#080e1b00');x.fillStyle=glow;x.fillRect(0,25,W,205);
  x.font='700 10px system-ui';x.textAlign='left';x.fillStyle='#f8e6c8';x.fillText(l.c.toUpperCase()+'  /  DESAFIO DE RITMO',14,17);
  x.textAlign='right';x.fillStyle='#f6cf7d';x.fillText('NOTA '+Math.min(P.step+1,seq.length)+' / '+seq.length,386,17);
@@ -478,6 +489,9 @@ function drawRhythmStage(l){
  // execution line and hit target
  x.fillStyle='#fff0c9';x.globalAlpha=.9;x.fillRect(20,hit,360,2);x.globalAlpha=1;
  x.fillStyle='#ffe2a0';x.font='800 8px system-ui';x.textAlign='left';x.fillText('TOQUE AQUI',22,hit+17);
+ if(P.judgement&&gt-(P.judgementAt||0)<.85){
+  const fade=1-(gt-(P.judgementAt||0))/.85;x.save();x.globalAlpha=Math.max(0,fade);x.textAlign='center';x.font='900 17px system-ui';x.fillStyle=P.judgementColor||'#fff0c9';x.shadowColor=P.judgementColor||'#fff0c9';x.shadowBlur=16;x.fillText(P.judgement,200,76-Math.max(0,gt-(P.judgementAt||0))*13);x.restore();
+ }
  // live timing pulse
  const beatPhase=((gt-start)%beat+beat)%beat;
  x.fillStyle='#ffffff20';x.fillRect(20,228,360,5);x.fillStyle='#f6ce7a';x.fillRect(20,228,360*(beatPhase/beat),5);
