@@ -306,7 +306,7 @@ scenes:[
 let P={i:0},held={},bx=.5,bt=.5,pb=.5,pr=0,drag=0,keys={},parts=[],gt=0;
 const scoreEl=$('#score'),bestEl=$('#best'),stageEl=$('#stage');
 function minimumScore(l){
- if(P.bossMode)return 0;
+ if(P.bossMode)return Math.ceil((P.bossSequence||[]).length*105);
  if(l.ty==='seq'||l.ty==='run')return Math.ceil((l.s||[]).length*(145+(P.i||0)*3));
  if(l.ty==='jam')return 200;
  if(l.ty==='swell')return 600;
@@ -496,6 +496,7 @@ function retryChallenge(){
  $('#ui').style.display='none';$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';init();backing(1);refreshHud();checkpoint();msg('Nova tentativa! Alcance a pontuação mínima para avançar.');
 }
 function win(){if(P.done)return;const i=P.i,l=LV[i],required=minimumScore(l),earned=P.score||0;
+ if(P.bossMode&&earned<required){P.done=1;P.play=0;$('#pause').disabled=true;backing(0);card(`<div class=eyebrow>BOSS FIGHT · TENTE DE NOVO</div><h2>O mestre ainda está no palco!</h2><p>Você fez ${earned} pontos. Precisa de ${required} para conquistar o botton. Acerte mais notas e mantenha o combo.</p>`,'RECOMEÇAR O DUELO',retryChallenge);return;}
  if(P.bossMode){P.done=1;P.play=0;$('#pause').disabled=true;backing(0);save.bossBadge=true;sv();card(`<div class=eyebrow>VITÓRIA · DESAFIO CONCLUÍDO</div><h2>Você venceu o Mestre Sivuca!</h2><p>Você conquistou o botton especial de FOLE.</p><div class=statline><div class=stat><b>🏅</b><span>BOTTON</span></div><div class=stat><b>${P.hits||0}</b><span>NOTAS ACERTADAS</span></div></div><p class=f>Uma homenagem divertida ao legado musical de Sivuca.</p>`,'Voltar ao legado',()=>{P.bossMode=false;P.play=0;P.done=1;stageEl.textContent='DESAFIO BOSS CONCLUÍDO';msg('Botton conquistado!');});return;}
   if(earned<required){
   P.done=1;P.play=0;$('#pause').disabled=true;backing(0);save.current=null;sv();
