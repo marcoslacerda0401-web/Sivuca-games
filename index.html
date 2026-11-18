@@ -258,7 +258,7 @@ x.scale(2,2);
 let ac,mg,bk,save={d:0,ach:[],best:{},choices:[]};
 try{Object.assign(save,JSON.parse(localStorage.fole||'{}'))}catch(e){}
 const sv=()=>{try{localStorage.fole=JSON.stringify(save)}catch(e){}};
-const KF=[392,440,494,523,587,659,698,784],BF=[[98,147,196],[131,196,262],[147,220,294],[87,131,175]],KL='qwerasdf',BL='zxcv',BN=['Sol','Dó','Ré','Fá'];
+const KF=[392,440,494,523,587,659,698,784],BF=[[98,147,196],[131,196,262],[147,220,294],[87,131,175]],KL='qwerasdf',BL='ghjk',BN=['Sol','Dó','Ré','Fá'];
 const LV=[
 {c:'Itabaiana',n:'Itabaiana',y:'1939–1945',col:['#3b1d6e','#e07a3a'],t:'Severino Dias de Oliveira nasceu em Itabaiana, Paraíba, em 26 de maio de 1930. Em 13 de junho de 1939, aos nove anos, seu pai levou para casa uma sanfona de dois baixos que havia comprado para o irmão. O menino começou a experimentar o instrumento — e não parou mais.',tip:'Explore o primeiro tema: controle o fole e acompanhe as notas iluminadas.',g:'Primeiro tema: fole + melodia',ty:'seq',s:['k0','k1','k2','k4','k2','k1','k0','k2','k4','k5','k4','k2','k1','k0','k1','k2','k3','k2','k1','k0'],o:'A infância em Itabaiana foi o primeiro capítulo de uma trajetória que atravessaria fronteiras.',a:'Primeiro acorde',
 scenes:[
@@ -535,7 +535,7 @@ else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 function activeSequence(){return P.bossMode?P.bossSequence:(LV[P.i].s||[])}
 function rhythmLane(id){return id[0]==='k'?Math.floor(+id.slice(1)/2):4+Math.floor(+id.slice(1)/2)}
 function drawRhythmStage(l){
- const names=['MEL 1 · Q/W','MEL 2 · E/R','MEL 3 · A/S','MEL 4 · D/F','BAIXO · Z/X','BAIXO · C/V'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4','#e6a36f','#8db6ef'],left=16,lw=61,top=53,bottom=211,hit=183,beat=rhythmConfig().beat,start=P.rhythmStart||gt+2.2,seq=activeSequence();
+ const names=['MEL 1 · Q/W','MEL 2 · E/R','MEL 3 · A/S','MEL 4 · D/F','BAIXO · G/H','BAIXO · J/K'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4','#e6a36f','#8db6ef'],left=16,lw=61,top=53,bottom=211,hit=183,beat=rhythmConfig().beat,start=P.rhythmStart||gt+2.2,seq=activeSequence();
  // Cada cidade recebe uma silhueta própria, com luzes de palco.
  x.fillStyle='#080e1b';x.fillRect(0,0,W,H);
  const skylines=[
