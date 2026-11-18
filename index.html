@@ -278,7 +278,7 @@ scenes:[
 ['Rádio e televisão','Durante cerca de três anos, Sivuca trabalha como artista contratado da Rádio e TV Tupi. O público passa a conhecer melhor seu trabalho.','Voz dramatizada — produtor','“O programa está prestes a começar. Prepare a sanfona.”'],
 ['Novas possibilidades','A rotina de apresentações exige versatilidade. O instrumento que nasceu ligado às festas populares também encontra espaço em novos formatos e públicos.','Narrador','O próximo passo será levar essa sonoridade para além do Brasil.']
 ]},
-{c:'Europa',n:'Europa',y:'1958–1964',col:['#1c1a40','#8e5ea2'],t:'Em 1958, Sivuca integra o grupo Os Brasileiros em uma turnê pela Europa. Depois vive em Lisboa e, a partir de 1959, trabalha em Paris por cerca de quatro anos. A experiência amplia seus encontros musicais e culturais.',tip:'Sustente a nota e controle o fole com calma.',g:'Sustente a nota na faixa de pressão',ty:'swell',k:'k2',lo:.3,hi:.7,need:4,o:'A experiência europeia prepara uma nova mudança: Nova York.',a:'Fole controlado',
+{c:'Europa',n:'Europa',y:'1958–1964',col:['#1c1a40','#8e5ea2'],t:'Em 1958, Sivuca integra o grupo Os Brasileiros em uma turnê pela Europa. Depois vive em Lisboa e, a partir de 1959, trabalha em Paris por cerca de quatro anos. A experiência amplia seus encontros musicais e culturais.',tip:'Sustente a nota e controle o fole com calma.',g:'Sustente a nota na faixa de pressão',ty:'swell',k:'k2',lo:.3,hi:.7,need:2.5,o:'A experiência europeia prepara uma nova mudança: Nova York.',a:'Fole controlado',
 scenes:[
 ['Do outro lado do Atlântico','Em 1958, depois de apresentações na Europa, Sivuca decide viver em Lisboa. A viagem representa uma mudança importante: sua música passa a circular em outro contexto cultural.','Narrador','A distância não apaga suas referências. Ela cria novas possibilidades de escuta.'],
 ['Paris','No ano seguinte, Sivuca segue para Paris e permanece na cidade por quatro anos. A capital francesa reúne artistas, estilos e públicos variados.','Voz dramatizada — músico','“Escute primeiro. Depois descubra como sua própria música conversa com o que encontrou.”'],
@@ -296,7 +296,7 @@ scenes:[
 ['Glória Gadelha','Sivuca desenvolve uma parceria artística importante com a compositora Glória Gadelha. Juntos, criam músicas que se tornam parte do repertório brasileiro.','Voz dramatizada — parceira musical','“Uma ideia pode começar pequena e crescer quando duas pessoas criam juntas.”'],
 ['Feira de Mangaio','“Feira de Mangaio”, parceria com Glória Gadelha, torna-se uma de suas obras mais conhecidas. Sivuca também compõe “João e Maria” com Chico Buarque e mantém outras colaborações.','Narrador','Sua música continua dialogando com a tradição e com novas sonoridades.']
 ]},
-{c:'João Pessoa',n:'Legado',y:'2003–2006',col:['#26345c','#d58b59'],t:'Em 2003, Sivuca fixa residência em João Pessoa. Continua criando e revisitando sua obra; em 2006, lança “Sivuca Sinfônico”, com arranjos para a Orquestra Sinfônica do Recife. Morre em 14 de dezembro de 2006, em João Pessoa, deixando um legado que permanece vivo.',tip:'Faça uma última interpretação: toque a sequência final.',g:'Última interpretação: toque a melodia',ty:'seq',s:['k0','k2','k4','k5','k4','k2','k1','k0','k1','k3','k5','k7','k6','k4','k2','k3','k4','k2','k1','k0'],o:'A jornada termina, mas a música continua sendo tocada, estudada e compartilhada.',a:'Legado musical',
+{c:'João Pessoa',n:'Legado',y:'2003–2006',col:['#26345c','#d58b59'],t:'Em 2003, Sivuca fixa residência em João Pessoa. Continua criando e revisitando sua obra; em 2006, lança “Sivuca Sinfônico”, com arranjos para a Orquestra Sinfônica do Recife. Morre em 14 de dezembro de 2006, em João Pessoa, deixando um legado que permanece vivo.',tip:'Faça uma última interpretação: toque a sequência final.',g:'Última interpretação: toque a melodia',ty:'seq',s:['k0','k2','k4','k5','k4','k2','k1','k0'],o:'A jornada termina, mas a música continua sendo tocada, estudada e compartilhada.',a:'Legado musical',
 scenes:[
 ['A sanfona e a orquestra','Em 2006, “Sivuca Sinfônico” apresenta arranjos do próprio músico em diálogo com a Orquestra Sinfônica do Recife. A sanfona ocupa o centro de uma obra que aproxima linguagens populares e orquestrais.','Narrador','A trajetória de um instrumento popular encontra novas formas de expressão.'],
 ['De volta à Paraíba','Em 2003, Sivuca fixa residência em João Pessoa. Em 14 de dezembro de 2006, aos 76 anos, falece na capital paraibana.','Narrador','Sua história permanece ligada à Paraíba e à música brasileira.'],
@@ -306,6 +306,7 @@ scenes:[
 let P={i:0},held={},bx=.5,bt=.5,pb=.5,pr=0,drag=0,keys={},parts=[],gt=0;
 const scoreEl=$('#score'),bestEl=$('#best'),stageEl=$('#stage');
 function minimumScore(l){
+ if(P.bossMode)return 0;
  if(l.ty==='seq'||l.ty==='run')return Math.ceil((l.s||[]).length*(145+(P.i||0)*3));
  if(l.ty==='jam')return 200;
  if(l.ty==='swell')return 600;
@@ -383,18 +384,18 @@ function backing(on){
   step++;
  },beat);
 }
-function rhythmConfig(){const i=P.i||0;return {beat:Math.max(.48,.72-i*.04),perfect:Math.max(.055,.11-i*.008),good:Math.max(.12,.23-i*.012),ok:Math.max(.20,.36-i*.018)}}
+function rhythmConfig(){const i=P.i||0;return {beat:Math.max(.48,.72-i*.04),perfect:.16,good:.30,ok:.48}}
 function rhythmTiming(){const c=rhythmConfig(),target=(P.rhythmStart||gt+2.2)+(P.step||0)*c.beat,offset=gt-target,abs=Math.abs(offset);return {target,offset,abs,grade:abs<=c.perfect?'PERFEITO':abs<=c.good?'BOM':abs<=c.ok?'OK':'FORA DO TEMPO'}}
 function down(id){
  init();if(held[id])return;
  const b=id[0]==='k',n=+id.slice(1);
  // O fole precisa de ar para sustentar a execução: bombear antes e durante a música.
- if(P.play&&!P.done&&['jam','seq','run'].includes(P.ty)&&pr<.16){
+ if(P.play&&!P.done&&['jam','seq','run'].includes(P.ty)&&pr<.08){
   msg('Falta ar no fole! Arraste para a esquerda e para a direita para bombear, depois toque a próxima nota.');
   return;
  }
  held[id]=voice(b?[KF[n]]:BF[n],!b);
- if(P.play&&!P.done&&['jam','seq','run'].includes(P.ty))pr=Math.max(0,pr-.035);
+ if(P.play&&!P.done&&['jam','seq','run'].includes(P.ty))pr=Math.max(0,pr-.018);
  const el=$('#'+id);el&&el.classList.add('on');
  if(P.ty==='jam'&&P.play&&!P.done){
   const type=b?'melodia':'baixo';
@@ -414,7 +415,7 @@ function down(id){
   }
  }
  if((P.ty==='seq'||P.ty==='run')&&P.play&&!P.done){
-  const sequence=LV[P.i].s||[],expected=sequence[P.step];
+  const sequence=activeSequence(),expected=sequence[P.step];
   if(sequence.length&&expected){
    const timing=rhythmTiming();
    if(timing.offset < -rhythmConfig().ok){
@@ -495,7 +496,8 @@ function retryChallenge(){
  $('#ui').style.display='none';$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';init();backing(1);refreshHud();checkpoint();msg('Nova tentativa! Alcance a pontuação mínima para avançar.');
 }
 function win(){if(P.done)return;const i=P.i,l=LV[i],required=minimumScore(l),earned=P.score||0;
- if(earned<required){
+ if(P.bossMode){P.done=1;P.play=0;$('#pause').disabled=true;backing(0);save.bossBadge=true;sv();card(`<div class=eyebrow>VITÓRIA · DESAFIO CONCLUÍDO</div><h2>Você venceu o Mestre Sivuca!</h2><p>Você conquistou o botton especial de FOLE.</p><div class=statline><div class=stat><b>🏅</b><span>BOTTON</span></div><div class=stat><b>${P.hits||0}</b><span>NOTAS ACERTADAS</span></div></div><p class=f>Uma homenagem divertida ao legado musical de Sivuca.</p>`,'Voltar ao legado',()=>{P.bossMode=false;P.play=0;P.done=1;stageEl.textContent='DESAFIO BOSS CONCLUÍDO';msg('Botton conquistado!');});return;}
+  if(earned<required){
   P.done=1;P.play=0;$('#pause').disabled=true;backing(0);save.current=null;sv();
   card(`<div class=eyebrow>DESAFIO NÃO CONCLUÍDO</div><h2>Quase lá!</h2><p>Você terminou a execução, mas ainda precisa alcançar a pontuação mínima para seguir para a próxima cidade.</p><div class=pass-panel><div><b>${earned}</b><small>SUA PONTUAÇÃO</small></div><div><b>${required}</b><small>MÍNIMO</small></div><div><b>${Math.max(0,required-earned)}</b><small>FALTARAM</small></div></div><div class=retry-note>Experimente acertar mais notas no tempo certo e manter seu combo. A fase não será liberada até atingir a meta.</div>`,'Tentar novamente',retryChallenge);
   return;
@@ -504,12 +506,20 @@ function win(){if(P.done)return;const i=P.i,l=LV[i],required=minimumScore(l),ear
   const bonus=Math.max(0,Math.round((l.ty==='run'?Math.max(0,l.lim-P.t):0)*35));
   P.score=(P.score||0)+bonus+(P.choiceBonus||0);
   save.best=save.best||{};save.best[i]=Math.max(save.best[i]||0,P.score);if(!save.ach.includes(l.a))save.ach.push(l.a);save.d=Math.max(save.d,i+1);save.choices=save.choices||[];save.choices[i]=P.choiceText||'';save.current=null;sv();chips();refreshHud();
-setTimeout(()=>{if(i<LV.length-1)card(`<h2>Capítulo concluído!</h2><div class="statline"><div class="stat"><b>${P.score}</b><span>pontos</span></div><div class="stat"><b>${P.perfect||0}</b><span>notas certas</span></div><div class="stat"><b>🏅</b><span>${l.a}</span></div></div><p>${l.o}</p><p class=f>${P.choiceNote||''}</p>`,'Embarcar para '+LV[i+1].c,()=>travelTo(i+1));
+setTimeout(()=>{if(i===LV.length-1)offerBoss();else if(i<LV.length-1)card(`<h2>Capítulo concluído!</h2><div class="statline"><div class="stat"><b>${P.score}</b><span>pontos</span></div><div class="stat"><b>${P.perfect||0}</b><span>notas certas</span></div><div class="stat"><b>🏅</b><span>${l.a}</span></div></div><p>${l.o}</p><p class=f>${P.choiceNote||''}</p>`,'Embarcar para '+LV[i+1].c,()=>travelTo(i+1));
 else card(`<h2>O legado continua</h2><p>Você acompanhou sete capítulos da vida de Mestre Sivuca: da primeira sanfona em Itabaiana às experiências internacionais, às parcerias e ao diálogo entre a música popular e a orquestra.</p><p>🏅 ${save.ach.join(' · ')}</p><p>“Feira de Mangaio”, criada com Glória Gadelha, e tantas outras obras continuam aproximando pessoas da música brasileira.</p><p class=f>As cenas e falas deste jogo são dramatizações ficcionais. Os acontecimentos biográficos seguem fontes históricas. A sanfona e as bases são sintetizadas e originais.</p>`,'Abrir diário',()=>{P.play=0;msg('Jornada concluída · Diário disponível');stageEl.textContent='JORNADA CONCLUÍDA';showJournal()})},700)}
+function offerBoss(){
+ card(`<div class=eyebrow>SEGREDO DESBLOQUEADO</div><h2>Você quer um desafio de verdade?</h2><p><b>Prêmio: um botton especial!</b></p><div style="display:flex;justify-content:center;padding:8px 0"><svg viewBox="0 0 240 112" width="100%" role="img" aria-label="Pixel art de Mestre Sivuca e jogador se enfrentando"><rect width="240" height="112" fill="#111a2c"/><path d="M0 88h240v24H0z" fill="#26344a"/><g shape-rendering="crispEdges"><rect x="32" y="25" width="30" height="30" fill="#d89a67"/><rect x="28" y="18" width="38" height="12" fill="#282039"/><rect x="25" y="29" width="10" height="7" fill="#282039"/><rect x="58" y="29" width="10" height="7" fill="#282039"/><rect x="38" y="38" width="5" height="5" fill="#182033"/><rect x="53" y="38" width="5" height="5" fill="#182033"/><rect x="35" y="55" width="25" height="25" fill="#4d8fbd"/><rect x="30" y="79" width="12" height="12" fill="#29324a"/><rect x="54" y="79" width="12" height="12" fill="#29324a"/><rect x="64" y="57" width="24" height="8" fill="#b7c5d6"/><rect x="84" y="50" width="8" height="25" fill="#b7c5d6"/><rect x="176" y="25" width="30" height="30" fill="#d69a70"/><rect x="172" y="17" width="38" height="13" fill="#f0d8b0"/><rect x="168" y="24" width="10" height="8" fill="#f0d8b0"/><rect x="204" y="24" width="10" height="8" fill="#f0d8b0"/><rect x="183" y="38" width="5" height="5" fill="#172033"/><rect x="197" y="38" width="5" height="5" fill="#172033"/><rect x="180" y="55" width="27" height="25" fill="#744a91"/><rect x="177" y="79" width="12" height="12" fill="#29324a"/><rect x="199" y="79" width="12" height="12" fill="#29324a"/><rect x="147" y="52" width="28" height="8" fill="#c78b45"/><rect x="145" y="60" width="8" height="19" fill="#c78b45"/><rect x="152" y="56" width="17" height="4" fill="#f5d58a"/><rect x="169" y="49" width="7" height="10" fill="#f5d58a"/><rect x="104" y="29" width="8" height="8" fill="#f6d16f"/><rect x="119" y="44" width="8" height="8" fill="#83d6cf"/><rect x="103" y="63" width="8" height="8" fill="#f08b78"/></g><text x="120" y="103" text-anchor="middle" fill="#ffe2a0" font-size="8" font-family="monospace">DUELO MUSICAL</text></svg></div><h1 style="letter-spacing:4px;color:#f6ce7a;text-align:center">BOSS FIGHT</h1><p class=f>Você contra o mestre da sanfona. Acerte a sequência para conquistar o botton.</p>`,'ENFRENTAR O MESTRE',launchBoss);
+}
+function launchBoss(){
+ const seq=['k0','b0','k2','b1','k4','b2','k6','b3','k7','b2','k5','b1','k3','b0','k1','b3'];
+ P.bossMode=true;P.bossSequence=seq;P.ty='seq';P.step=0;P.score=0;P.combo=0;P.miss=0;P.hits=0;P.perfect=0;P.totalTiming=0;P.done=0;P.play=1;P.paused=0;P.rhythmStart=gt+2.5;P.judgement='';
+ $('#ui').style.display='none';$('#pause').disabled=false;$('#pause').textContent='Ⅱ Pausar';stageEl.textContent='BOSS FIGHT';init();backing(1);refreshHud();msg('BOSS FIGHT! Acerte as notas e vença o duelo musical.');
+}
 function logic(dt){if(!P.play||P.done||P.paused)return;const l=LV[P.i];
 if(l.ty==='seq'||l.ty==='run'){
  if(l.ty==='run'&&P.t){P.t+=dt;if(P.t>l.lim){P.step=0;P.t=0;P.combo=0;P.bl=null;P.rhythmStart=gt+2.2;msg('O tempo acabou. A sequência foi reiniciada; siga a tecla iluminada.');refreshHud();}}
- const seq=l.s||[],target=(P.rhythmStart||gt+2.2)+(P.step||0)*rhythmConfig().beat;
+ const seq=activeSequence(),target=(P.rhythmStart||gt+2.2)+(P.step||0)*rhythmConfig().beat;
  if(seq[P.step]&&gt>target+rhythmConfig().ok){
   P.step++;P.combo=0;P.miss=(P.miss||0)+1;P.judgement='NOTA PERDIDA';P.judgementColor='#ff9c88';P.judgementAt=gt;
   msg('Nota perdida! Acompanhe a próxima na linha de execução.');checkpoint();refreshHud();
@@ -517,13 +527,14 @@ if(l.ty==='seq'||l.ty==='run'){
  }
  if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();
 }
-else if(l.ty=='swell'){const ok=held[l.k]&&pr>l.lo&&pr<l.hi;P.hold=Math.max(0,P.hold+(ok?dt:-dt*.7));if(P.hold>=l.need){P.score=1000;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
+else if(l.ty=='swell'){const ok=held[l.k]&&pr>l.lo&&pr<l.hi;P.hold=Math.max(0,P.hold+(ok?dt:-dt*.7));if(P.hold>=Math.min(l.need,2.5)){P.score=1000;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 else if(l.ty==='jam'){if(P.en>=100){P.score=(P.score||0)+500;refreshHud();win()}else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 else if(Math.floor(gt*2)!==Math.floor((gt-dt)*2))checkpoint();}
 
+function activeSequence(){return P.bossMode?P.bossSequence:(LV[P.i].s||[])}
 function rhythmLane(id){return id[0]==='k'?Math.floor(+id.slice(1)/2):4+Math.floor(+id.slice(1)/2)}
 function drawRhythmStage(l){
- const names=['MEL 1 · Q/W','MEL 2 · E/R','MEL 3 · A/S','MEL 4 · D/F','BAIXO · Z/X','BAIXO · C/V'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4','#e6a36f','#8db6ef'],left=16,lw=61,top=53,bottom=211,hit=183,beat=rhythmConfig().beat,start=P.rhythmStart||gt+2.2,seq=l.s||[];
+ const names=['MEL 1 · Q/W','MEL 2 · E/R','MEL 3 · A/S','MEL 4 · D/F','BAIXO · Z/X','BAIXO · C/V'],colors=['#f6c86d','#83d6cf','#f08b78','#b99af4','#e6a36f','#8db6ef'],left=16,lw=61,top=53,bottom=211,hit=183,beat=rhythmConfig().beat,start=P.rhythmStart||gt+2.2,seq=activeSequence();
  // Cada cidade recebe uma silhueta própria, com luzes de palco.
  x.fillStyle='#080e1b';x.fillRect(0,0,W,H);
  const skylines=[
